@@ -8,7 +8,7 @@
 import scrapy
 from pypinyin import lazy_pinyin
 from scrapy.loader import ItemLoader
-from scrapy.loader.processors import MapCompose, TakeFirst, Join, Identity
+from scrapy.loader.processors import MapCompose, TakeFirst, Join
 
 
 class VideoItemLoader(ItemLoader):
@@ -30,12 +30,14 @@ class VideospiderItem(scrapy.Item):
     )
     video_time = scrapy.Field()
     video_actor = scrapy.Field(
-        output_processor=Join(" ")
+        input_processor = MapCompose(lambda x: x.strip().strip("\n").strip("\r")),
+        output_processor = Join(" ")
     )
-    video_director = scrapy.Field()
+    video_director = scrapy.Field(
+        input_processor=MapCompose(lambda x: x.strip().strip("\n").strip("\r"))
+    )
     video_language = scrapy.Field()
     front_image_url = scrapy.Field()
     video_update_time = scrapy.Field(
         input_processor = MapCompose()
     )
-    pass
