@@ -9,8 +9,8 @@ from videoSpider.items import *
 
 class QiyiSpider(scrapy.Spider):
     name = 'qiyi'
-    allowed_domains = ['list.iqiyi.com/www/2/----------------iqiyi--.html', 'iqiyi.com']
-    start_urls = ['http://list.iqiyi.com/www/2/----------------iqiyi--.html/']
+    allowed_domains = ['iqiyi.com']
+    start_urls = ['http://list.iqiyi.com/www/1/----------------iqiyi--.html/']
 
     def parse(self, response):
         # 对视频列表的解析
@@ -21,13 +21,15 @@ class QiyiSpider(scrapy.Spider):
             image_url = parse.urljoin(response.url, post_node.css("img::attr(src)").extract_first(""))
             post_url = post_node.css("::attr(href)").extract_first("")
             if list_type == "电视剧":
-                yield Request(url=parse.urljoin(response.url, post_url), meta={"front_image_url": image_url, "list_type": list_type}, callback=self.parse_detail_1)
+                callback = self.parse_detail_1
             elif list_type == "电影":
-                pass
+                callback = self.parse_detail_2
             elif list_type == "综艺":
-                pass
+                callback = self.parse_detail_3
             elif list_type == "动漫":
-                pass
+                callback = self.parse_detail_4
+            yield Request(url=parse.urljoin(response.url, post_url),
+                          meta={"front_image_url": image_url, "list_type": list_type}, callback=callback)
 
         # 提取下一页的路径
         next_url = response.css("div.mod-page a.a1::attr(href)").extract_first("")
@@ -35,6 +37,7 @@ class QiyiSpider(scrapy.Spider):
             yield Request(url=parse.urljoin(response.url, next_url), callback=self.parse)
         else:
             pass
+
 
     def parse_detail_1(self, response):
         # 对电视剧细节的解析
@@ -57,7 +60,7 @@ class QiyiSpider(scrapy.Spider):
         # 将解析后的数据添加如Item
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
         item_loader.add_value("play_url", play_urls)
-        item_loader.add_value("list_type", [response.meta.get("list_type", "")])
+        item_loader.add_value("list_type", response.meta.get("list_type", ""))
         item_loader.add_css("video_des", "div.episodeIntro div.episodeIntro-brief[data-moreorless='moreinfo'] span::text")
         item_loader.add_css("video_name", "div.info-intro h1::attr(data-paopao-wallname)")
         item_loader.add_css("spell_name", "div.info-intro h1::attr(data-paopao-wallname)")
@@ -67,8 +70,37 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_css("video_actor", "div.actorJoin .headImg-wrap[data-moreorless='lessinfo'] li .headImg-bottom a::text")
         item_loader.add_css("video_director", ".episodeIntro-director a::text")
         item_loader.add_css("video_language", ".episodeIntro-lang[itemprop='inLanguage'] a::text")
-        item_loader.add_value("front_image_url", [response.meta.get("front_image_url", "")])
+        item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
         item_loader.add_css("video_update_time", ".update-way::text")
 
         video_item = item_loader.load_item()
         yield video_item
+
+
+    def parse_detail_2(self, response):
+        # 对电影细节的解析
+        item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
+        item_loader.add_value("play_url", response.url)
+        item_loader.add_value("list_type", response.meta.get("list_type", ""))
+        item_loader.add_css("video_des", ".partDes j_param_des::attr(data-description)")
+        item_loader.add_css("video_name", ".vInfoSide_rTit::text")
+        item_loader.add_css("spell_name", ".vInfoSide_rTit::text")
+        item_loader.add_css("video_addr", ".vInfoSide_rSpan a[rseat='707181_region']::text")
+        item_loader.add_css("video_type", ".vInfoSide_rSpan a[rseat='707181_genres']::text")
+        item_loader.add_css("video_actor", ".start_nameTxt::text")
+        item_loader.add_css("video_director", ".vInfoSide_rName a::text")
+        item_loader.add_css("video_language", ".vInfoSide_rSpan a[rseat='707181_region']::text")
+        item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
+
+        video_item = item_loader.load_item()
+        yield video_item
+
+
+    def parse_detail_3(self, response):
+        # 对电影细节的解析
+        pass
+
+
+    def parse_detail_4(self, response):
+        # 对电影细节的解析
+        pass
