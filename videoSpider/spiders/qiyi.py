@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import scrapy
 from urllib import parse
 from tools.selenium_spider import get_last
@@ -40,15 +41,17 @@ class QiyiSpider(scrapy.Spider):
         # 处理电视剧的路径
         play_urls = {}
         album_items = response.css(".albumSubTab-wrap .piclist-wrapper ul li")
-        tab_pills = response.css(".albumTabPills:nth-child(1) li")
+        tab_pills = response.css("#widget-tab-3 .selEpisodeTab-wrap ul li").extract()
         for album_item in album_items:
             if not album_item.css(".site-piclist_pic > a i.icon-yugao-new"):
                 url = album_item.css(".site-piclist_pic > a::attr(href)").extract_first("")
                 num = album_item.css(".site-piclist_info .site-piclist_info_title a::text").extract_first("").strip(" ").strip("\n")
                 play_urls[num] = url
+            else:
+                break
 
         if len(tab_pills) > 1:
-            for i in get_last(response.url, len(tab_pills)):
+            for i in get_last(response.url, len(tab_pills), os.path.abspath("tools/phantomjs")):
                 play_urls[i[0]] = i[1]
 
         # 将解析后的数据添加如Item
