@@ -4,12 +4,10 @@
 File: selenium_spider.py
 Author: Rock Johnson
 """
-import os
 from selenium import webdriver
 
-
-def get_last(url, size):
-    browser = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"))
+def get_last(url, size, path):
+    browser = webdriver.PhantomJS(executable_path=path)
     browser.get(url)
     for i in range(1, size):
         buttons = browser.find_element_by_css_selector(".albumTabPills:nth-child(1) li:nth-child(" + str(i + 1) + ")")
@@ -20,7 +18,7 @@ def get_last(url, size):
                 yield urls.text, urls.get_attribute("href")
             else:
                 break
-
+    browser.quit()
 
 def episode(str):
     first_num = int(str[str.index("-") + 1:])
