@@ -82,7 +82,7 @@ class QiyiSpider(scrapy.Spider):
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
         item_loader.add_value("play_url", response.url)
         item_loader.add_value("list_type", response.meta.get("list_type", ""))
-        item_loader.add_css("video_des", ".partDes j_param_des::attr(data-description)")
+        item_loader.add_css("video_des", ".partDes::attr(data-description)")
         item_loader.add_css("video_name", ".vInfoSide_rTit::text")
         item_loader.add_css("spell_name", ".vInfoSide_rTit::text")
         item_loader.add_css("video_addr", ".vInfoSide_rSpan a[rseat='707181_region']::text")
