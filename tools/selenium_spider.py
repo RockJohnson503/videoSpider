@@ -4,23 +4,56 @@
 File: selenium_spider.py
 Author: Rock Johnson
 """
+import os, time
 from selenium import webdriver
 
-def get_last(url, size, path):
-    browser = webdriver.PhantomJS(executable_path=path)
+# 电影的分页处理
+def get_last_tv(url, ex_path):
+    browser = webdriver.PhantomJS(executable_path=ex_path)
     browser.get(url)
-    for i in range(1, size):
-        buttons = browser.find_element_by_css_selector(".albumTabPills:nth-child(1) li:nth-child(" + str(i + 1) + ")")
+    i = 2
+    while True:
+        try:
+            buttons = browser.find_element_by_css_selector(".albumTabPills:nth-child(1) li:nth-child(" + str(i) + ")")
+        except:
+            break
         buttons.click()
-        for i in range(1, episode(buttons.text) + 2):
-            urls = browser.find_element_by_css_selector(".albumSubTab-wrap .piclist-wrapper ul li:nth-child(" + str(i) + ") .site-piclist_info_title a")
+        time.sleep(1)
+        j = 1
+        while True:
+            try:
+                urls = browser.find_element_by_css_selector(".piclist-wrapper[data-tab-body='widget-tab-3'] .site-piclist li:nth-child(" + str(j) + ") .site-piclist_info_title a")
+            except:
+                break
             if "预告" not in urls.text:
                 yield urls.text, urls.get_attribute("href")
+                j += 1
             else:
                 break
+        i += 1
     browser.quit()
 
-def episode(str):
-    first_num = int(str[str.index("-") + 1:])
-    last_num = int(str[:str.index("-")])
-    return abs(first_num - last_num)
+# 综艺的分页处理
+def get_last_variety(url, ex_path):
+    browser = webdriver.PhantomJS(executable_path=ex_path)
+    browser.get(url)
+    while True:
+        try:
+            no_page = browser.find_element_by_css_selector("#album_pic_paging .noPage")
+            if no_page.text == "下一页":
+                break
+            else:
+                browser.find_element_by_css_selector("#album_pic_paging a[data-key='down']").click()
+        except:
+            browser.find_element_by_css_selector("#album_pic_paging a[data-key='down']").click()
+
+        i = 1
+        while True:
+            try:
+                time = browser.find_element_by_css_selector("#albumpic-showall-wrap li:nth-child(" + str(i) + ") .wrapper-listTitle span")
+                urls = browser.find_element_by_css_selector("#albumpic-showall-wrap li:nth-child(" + str(i) + ") .site-piclist_pic_link")
+            except:
+                break
+            yield time.text, urls.get_attribute("href")
+            i += 1
+    browser.quit()
