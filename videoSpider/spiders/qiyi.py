@@ -10,7 +10,7 @@ from videoSpider.items import *
 class QiyiSpider(scrapy.Spider):
     name = 'qiyi'
     allowed_domains = ['iqiyi.com']
-    start_urls = ['http://list.iqiyi.com/www/6/----------------iqiyi--.html/']
+    start_urls = ['http://list.iqiyi.com/www/1/----------------iqiyi--.html/']
 
     def parse(self, response):
         # 对视频列表的解析
@@ -32,7 +32,7 @@ class QiyiSpider(scrapy.Spider):
                           meta={"front_image_url": image_url, "list_type": list_type}, callback=callback)
 
         # 提取下一页的路径
-        next_url = response.css("div.mod-page a.a1::attr(href)").extract_first("")
+        next_url = response.css("div.mod-page .a1[data-key='down']::attr(href)").extract_first("")
         if next_url:
             yield Request(url=parse.urljoin(response.url, next_url), callback=self.parse)
         else:
@@ -41,13 +41,13 @@ class QiyiSpider(scrapy.Spider):
 
     def parse_detail_1(self, response):
         # 对电视剧细节的解析
-        # 处理电视剧的路径
+        # 处理电视剧的分页问题
         play_urls = {}
         album_items = response.css(".albumSubTab-wrap .piclist-wrapper ul li")
         for album_item in album_items:
             if not album_item.css(".site-piclist_pic > a i.icon-yugao-new"):
                 url = album_item.css(".site-piclist_pic > a::attr(href)").extract_first("")
-                num = album_item.css(".site-piclist_info .site-piclist_info_title a::text").extract_first("").strip(" ").strip("\n")
+                num = album_item.css(".site-piclist_info .site-piclist_info_title a::text").extract_first("").strip().strip("\n").strip("\r")
                 play_urls[num] = url
             else:
                 break
@@ -63,8 +63,8 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_value("play_url", play_urls)
         item_loader.add_value("list_type", response.meta.get("list_type", ""))
         item_loader.add_css("video_des", "div.episodeIntro div.episodeIntro-brief[data-moreorless='lessinfo'] span::text")
-        item_loader.add_css("video_name", "div.info-intro h1::attr(data-paopao-wallname)")
-        item_loader.add_css("spell_name", "div.info-intro h1::attr(data-paopao-wallname)")
+        item_loader.add_css("video_name", "h1[itemprop='name'] a::text")
+        item_loader.add_css("spell_name", "h1[itemprop='name'] a::text")
         item_loader.add_css("video_addr", ".episodeIntro-area a::text")
         item_loader.add_css("video_type", ".episodeIntro-type a::text")
         item_loader.add_css("video_time", ".episodeIntro-lang[itemprop='datePublished'] a::text")
@@ -72,7 +72,6 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_css("video_director", ".episodeIntro-director a::text")
         item_loader.add_css("video_language", ".episodeIntro-lang[itemprop='inLanguage'] a::text")
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
-        item_loader.add_css("video_update_time", ".update-way::text")
 
         video_item = item_loader.load_item()
         yield video_item
@@ -100,6 +99,7 @@ class QiyiSpider(scrapy.Spider):
 
     def parse_detail_3(self, response):
         # 对综艺细节的解析
+        # 处理综艺的分页问题
         play_urls = {}
         album_items = response.css("#albumpic-showall-wrap li")
         for album_item in album_items:
@@ -124,7 +124,6 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_css("video_time", ".episodeIntro-lang[itemprop='datePublished'] a::text")
         item_loader.add_css("video_language", ".episodeIntro-lang[itemprop='inLanguage'] a::text")
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
-        item_loader.add_css("video_update_time", ".episodeIntro-update span::text")
 
         video_item = item_loader.load_item()
         yield video_item
@@ -132,4 +131,31 @@ class QiyiSpider(scrapy.Spider):
 
     def parse_detail_4(self, response):
         # 对动漫细节的解析
-        pass
+        # 处理动漫的分页问题
+        play_urls = {}
+        album_items = response.css(".wrapper-piclist ul li")
+        for album_item in album_items:
+            url = album_item.css(".site-piclist_pic > a::attr(href)").extract_first("")
+            num = album_item.css(".site-piclist_info .site-piclist_info_title a::text").extract_first("").strip().strip("\n").strip("\r")
+            play_urls[num] = url
+
+        tab_pills = response.css("#block-H .mod-album_tab_num a").extract()
+        if len(tab_pills) > 1:
+            for i, k in get_last_anime(response.url, os.path.abspath("tools/phantomjs")):
+                play_urls[i] = k
+
+        item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
+
+        item_loader.add_value("play_url", play_urls)
+        item_loader.add_value("list_type", response.meta.get("list_type", ""))
+        item_loader.add_css("video_des", "*[data-moreorless='lessinfo'][itemprop='description'] span:not(.c-999)::text")
+        item_loader.add_css("video_name", "h1[itemprop='name'] a::text")
+        item_loader.add_css("spell_name", "h1[itemprop='name'] a::text")
+        item_loader.add_css("video_addr", "*[itemprop='contentLocation'] a::text")
+        item_loader.add_css("video_type", "*[itemprop='genre'] a::text")
+        item_loader.add_css("video_time", ".main_title span::text")
+        item_loader.add_css("video_language", "*[itemprop='inLanguage'] a::text")
+        item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
+
+        video_item = item_loader.load_item()
+        yield video_item
