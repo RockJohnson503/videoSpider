@@ -38,6 +38,3 @@ class VideospiderItem(scrapy.Item):
     )
     video_language = scrapy.Field()
     front_image_url = scrapy.Field()
-    video_update_time = scrapy.Field(
-        input_processor = MapCompose()
-    )
