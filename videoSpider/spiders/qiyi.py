@@ -10,7 +10,9 @@ from videoSpider.items import *
 class QiyiSpider(scrapy.Spider):
     name = 'qiyi'
     allowed_domains = ['iqiyi.com']
-    start_urls = ['http://list.iqiyi.com/www/1/----------------iqiyi--.html/']
+    # start_urls = ['http://list.iqiyi.com/www/1/----------------iqiyi--.html/']
+    start_urls = ['http://list.iqiyi.com/www/4/-------------11-30-1-iqiyi--.html']
+    url_nums = ["2", "1", "6", "4"]
 
     def parse(self, response):
         # 对视频列表的解析
@@ -36,7 +38,12 @@ class QiyiSpider(scrapy.Spider):
         if next_url:
             yield Request(url=parse.urljoin(response.url, next_url), callback=self.parse)
         else:
-            pass
+            i = response.url[response.url.index("www/") + 4:response.url.index("/-")]
+            try:
+                num = self.url_nums[self.url_nums.index(i) + 1]
+            except:
+                num = self.url_nums[0]
+            yield Request(url="http://list.iqiyi.com/www/" + str(num) + "/----------------iqiyi--.html/", callback=self.parse)
 
 
     def parse_detail_1(self, response):
@@ -74,7 +81,8 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
 
         video_item = item_loader.load_item()
-        yield video_item
+        if len(video_item) > 3:
+            yield video_item
 
 
     def parse_detail_2(self, response):
@@ -126,7 +134,8 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
 
         video_item = item_loader.load_item()
-        yield video_item
+        if len(video_item) > 3:
+            yield video_item
 
 
     def parse_detail_4(self, response):
@@ -158,4 +167,5 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
 
         video_item = item_loader.load_item()
-        yield video_item
+        if len(video_item) > 3:
+            yield video_item
