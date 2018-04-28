@@ -14,6 +14,11 @@ BOT_NAME = 'videoSpider'
 SPIDER_MODULES = ['videoSpider.spiders']
 NEWSPIDER_MODULE = 'videoSpider.spiders'
 
+# Database config
+MYSQL_HOST = "127.0.0.1"
+MYSQL_DBNAME = "video"
+MYSQL_USER = "root"
+MYSQL_PASSWORD = ""
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'videoSpider (+http://www.yourdomain.com)'
