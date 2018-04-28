@@ -10,8 +10,7 @@ from videoSpider.items import *
 class QiyiSpider(scrapy.Spider):
     name = 'qiyi'
     allowed_domains = ['iqiyi.com']
-    # start_urls = ['http://list.iqiyi.com/www/1/----------------iqiyi--.html/']
-    start_urls = ['http://list.iqiyi.com/www/4/-------------11-30-1-iqiyi--.html']
+    start_urls = ['http://list.iqiyi.com/www/2/----------------iqiyi--.html/']
     url_nums = ["2", "1", "6", "4"]
 
     def parse(self, response):
@@ -28,7 +27,7 @@ class QiyiSpider(scrapy.Spider):
                 callback = self.parse_detail_2
             elif list_type == "综艺":
                 callback = self.parse_detail_3
-            elif list_type == "动漫":
+            else:
                 callback = self.parse_detail_4
             yield Request(url=parse.urljoin(response.url, post_url),
                           meta={"front_image_url": image_url, "list_type": list_type}, callback=callback)
@@ -54,7 +53,11 @@ class QiyiSpider(scrapy.Spider):
         for album_item in album_items:
             if not album_item.css(".site-piclist_pic > a i.icon-yugao-new"):
                 url = album_item.css(".site-piclist_pic > a::attr(href)").extract_first("")
-                num = album_item.css(".site-piclist_info .site-piclist_info_title a::text").extract_first("").strip().strip("\n").strip("\r")
+                num = album_item.css(".site-piclist_info .site-piclist_info_title a::text")\
+                    .extract_first("")\
+                    .strip()\
+                    .strip("\n")\
+                    .strip("\r")
                 play_urls[num] = url
             else:
                 break
@@ -145,7 +148,11 @@ class QiyiSpider(scrapy.Spider):
         album_items = response.css(".wrapper-piclist ul li")
         for album_item in album_items:
             url = album_item.css(".site-piclist_pic > a::attr(href)").extract_first("")
-            num = album_item.css(".site-piclist_info .site-piclist_info_title a::text").extract_first("").strip().strip("\n").strip("\r")
+            num = album_item.css(".site-piclist_info .site-piclist_info_title a::text")\
+                .extract_first("")\
+                .strip()\
+                .strip("\n")\
+                .strip("\r")
             play_urls[num] = url
 
         tab_pills = response.css("#block-H .mod-album_tab_num a").extract()
