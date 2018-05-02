@@ -35,7 +35,8 @@ class QiyiSpider(scrapy.Spider):
                           meta={"front_image_url": image_url,
                                 "list_type": list_type,
                                 "video_name": video_name,
-                                "video_actor": video_actor}, callback=callback)
+                                "video_actor": video_actor,
+                                "video_origin": "爱奇艺"}, callback=callback)
 
         # 提取下一页的路径
         next_url = response.css("div.mod-page .a1[data-key='down']::attr(href)").extract_first("")
@@ -84,6 +85,7 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_css("video_type", ".episodeIntro-type a::text")
         item_loader.add_css("video_time", ".episodeIntro-lang[itemprop='datePublished'] a::text")
         item_loader.add_value("video_actor", response.meta.get("video_actor", ""))
+        item_loader.add_value("video_origin", response.meta.get("video_origin", ""))
         item_loader.add_css("video_director", ".episodeIntro-director a::text")
         item_loader.add_css("video_language", ".episodeIntro-lang[itemprop='inLanguage'] a::text")
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
@@ -105,6 +107,7 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_css("video_addr", ".vInfoSide_rSpan a[rseat='707181_region']::text")
         item_loader.add_css("video_type", ".vInfoSide_rSpan a[rseat='707181_genres']::text")
         item_loader.add_value("video_actor", response.meta.get("video_actor", ""))
+        item_loader.add_value("video_origin", response.meta.get("video_origin", ""))
         item_loader.add_css("video_director", ".vInfoSide_rName a::text")
         item_loader.add_css("video_language", ".vInfoSide_rSpan a[rseat='707181_region']::text")
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
@@ -137,6 +140,7 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_value("spell_name", response.meta.get("video_name", ""))
         item_loader.add_css("video_addr", ".episodeIntro-area a::text")
         item_loader.add_css("video_type", ".episodeIntro-type a::text")
+        item_loader.add_value("video_origin", response.meta.get("video_origin", ""))
         item_loader.add_css("video_time", ".episodeIntro-lang[itemprop='datePublished'] a::text")
         item_loader.add_css("video_language", ".episodeIntro-lang[itemprop='inLanguage'] a::text")
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
@@ -175,6 +179,7 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_css("video_addr", "*[itemprop='contentLocation'] a::text")
         item_loader.add_css("video_type", "*[itemprop='genre'] a::text")
         item_loader.add_css("video_time", ".main_title span::text")
+        item_loader.add_value("video_origin", response.meta.get("video_origin", ""))
         item_loader.add_css("video_language", "*[itemprop='inLanguage'] a::text")
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
 

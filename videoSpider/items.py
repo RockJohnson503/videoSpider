@@ -33,6 +33,7 @@ class VideospiderItem(scrapy.Item):
         input_processor = MapCompose(lambda x: x.strip().strip("\n").strip("\r").strip("\t")),
         output_processor = Join(" ")
     )
+    video_origin = scrapy.Field()
     video_director = scrapy.Field(
         input_processor=MapCompose(lambda x: x.strip().strip("\n").strip("\r").strip("\t"))
     )
@@ -42,14 +43,16 @@ class VideospiderItem(scrapy.Item):
     def get_insert_sql(self):
         # 执行插入数据库的sql语句
         insert_sql = ["""
-            insert into videos(list_type, video_des, video_name,
+            insert into videos(video_origin, list_type, video_des, video_name,
             spell_name, video_addr, video_type, video_time,
             video_actor, video_director, video_language,
             front_image_url, crawl_time, crawl_update_time) 
-            values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             on DUPLICATE key update crawl_update_time = values(crawl_update_time)
         """]
+
         params = [[
+            self["video_origin"],
             self["list_type"],
             self["video_des"] if "video_des" in self.keys() else None,
             self["video_name"],
