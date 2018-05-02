@@ -92,3 +92,32 @@ def get_last_anime(url, ex_path):
             j += 1
         i += step
     browser.quit()
+
+# 优酷电视剧的分页处理
+def get_youku_tv(url, ex_path):
+    browser = webdriver.PhantomJS(executable_path=ex_path)
+    browser.get(url)
+
+    i = 1
+    while True:
+        j = 1
+        try:
+            button = browser.find_element_by_css_selector("#showInfo .p-tab-pills li:nth-child(" + str(i) + ")")
+        except:
+            break
+        button.click()
+        time.sleep(1)
+
+        while True:
+            try:
+                episode_node = browser.find_element_by_css_selector(".p-panel:nth-child(" + str(i) + ") ul li:nth-child(" + str(j) + ") a")
+                try:
+                    browser.find_element_by_css_selector(".p-panel:nth-child(" + str(i) + ") ul li:nth-child(" + str(j) + ") i.p-icon-preview")
+                    break
+                except:
+                    yield episode_node.text, episode_node.get_attribute("href")
+            except:
+                break
+            j += 1
+        i += 1
+    browser.quit()
