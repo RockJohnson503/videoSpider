@@ -19,19 +19,19 @@ class VideospiderPipeline(object):
             host = settings["MYSQL_HOST"],
             db = settings["MYSQL_DBNAME"],
             user = settings["MYSQL_USER"],
-            pwd = settings["MYSQL_PASSWORD"],
-            charset = "utf-8",
+            passwd = settings["MYSQL_PASSWORD"],
+            charset = "utf8",
             cursorclass = pymysql.cursors.DictCursor,
-            use_unicode = True
+            use_unicode = True,
         )
-        dbpool = adbapi.ConnectionPool("MySQLdb", **dparms)
+        dbpool = adbapi.ConnectionPool("pymysql", **dparms)
         return cls(dbpool)
 
     def process_item(self, item, spider):
         # 使mysql插入变成异步执行
         query = self.dbpool.runInteraction(self.do_insert, item)
         # 处理异常
-        query.addErrorback(self.handle_error, item, spider)
+        query.addErrback(self.handle_error, item, spider)
 
     def handle_error(self, failure, item, spider):
         # 处理异步插入的异常并打印出来
@@ -41,4 +41,5 @@ class VideospiderPipeline(object):
         # 执行具体插入
         # 根据不同的item构建不同的插入语句
         insert_sql, params = item.get_insert_sql()
-        cursor.execute(insert_sql, params)
+        for i in range(len(insert_sql)):
+            cursor.execute(insert_sql[i], params[i])
