@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import os
-import scrapy
+import os, scrapy
 from urllib import parse
 from tools.selenium_spider import *
 from scrapy.http import Request
