@@ -44,3 +44,24 @@ def error_video(list_type, url, name):
 
     cursor.execute(insert_sql, (list_type, url, name))
     conn.commit()
+
+# 将报错的语法添加到数据库
+def error_grammer(grammer, video_name):
+    dbparms = dict(
+        host=settings.MYSQL_HOST,
+        db=settings.MYSQL_DBNAME,
+        user=settings.MYSQL_USER,
+        passwd=settings.MYSQL_PASSWORD,
+        charset='utf8',
+        use_unicode=True,
+    )
+    conn = pymysql.connect(**dbparms)
+    cursor = conn.cursor()
+
+    insert_sql = """
+        insert into errgrammer(grammer, video_name)
+        values(%s, %s)
+    """
+
+    cursor.execute(insert_sql, (grammer, video_name))
+    conn.commit()
