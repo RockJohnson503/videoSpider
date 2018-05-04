@@ -7,7 +7,7 @@ Author: Rock Johnson
 import os, time
 from selenium import webdriver
 
-# 电影的分页处理
+# 电视剧的分页处理
 def get_last_tv(url, ex_path):
     browser = webdriver.PhantomJS(executable_path=ex_path)
     browser.get(url)
