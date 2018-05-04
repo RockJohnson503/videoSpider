@@ -6,6 +6,7 @@
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 import pymysql
 from twisted.enterprise import adbapi
+from tools.common import error_grammer
 
 
 class VideospiderPipeline(object):
@@ -34,8 +35,8 @@ class VideospiderPipeline(object):
         query.addErrback(self.handle_error, item, spider)
 
     def handle_error(self, failure, item, spider):
-        # 处理异步插入的异常并打印出来
-        print(failure)
+        # 处理异步插入的异常并存入数据库
+        error_grammer(failure.value.args[1], item["video_name"])
 
     def do_insert(self, cursor, item):
         # 执行具体插入
