@@ -6,6 +6,7 @@
 # https://doc.scrapy.org/en/latest/topics/items.html
 
 import scrapy, datetime
+from tools.common import get_md5
 from pypinyin import lazy_pinyin
 from scrapy.loader import ItemLoader
 from scrapy.loader.processors import MapCompose, TakeFirst, Join
@@ -42,16 +43,18 @@ class VideospiderItem(scrapy.Item):
 
     def get_insert_sql(self):
         # 执行插入数据库的sql语句
+        video_id = get_md5(self["front_image_url"])
         insert_sql = ["""
-            insert into videos(video_origin, list_type, video_des, video_name,
+            insert into videos(video_id, video_origin, list_type, video_des, video_name,
             spell_name, video_addr, video_type, video_time,
             video_actor, video_director, video_language,
             front_image_url, crawl_time, crawl_update_time) 
-            values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             on DUPLICATE key update crawl_update_time = values(crawl_update_time)
         """]
 
         params = [[
+            video_id,
             self["video_origin"],
             self["list_type"],
             self["video_des"] if "video_des" in self.keys() else None,
@@ -68,25 +71,17 @@ class VideospiderItem(scrapy.Item):
             datetime.datetime.now()
         ]]
 
-        if self["list_type"] != "电影":
-            for items in self["play_url"]:
-                insert_sql.append("""
+        flag = self["play_url"] if isinstance(self["play_url"], dict) else range(1, 2)
+        for items in flag:
+            insert_sql.append("""
                 insert into episodes(video_id, episode, video_url)
                 values(%s, %s, %s)
-                """)
-                params.append((
-                    self["front_image_url"],
-                    items,
-                    self["play_url"].get(items)
-                ))
-        else:
-            insert_sql.append("""
-            insert into episodes(video_id, video_url)
-            values(%s, %s)
             """)
+
             params.append((
-                self["front_image_url"],
-                self["play_url"]
+                video_id,
+                items,
+                self["play_url"].get(items) if isinstance(self["play_url"], dict) else self["play_url"]
             ))
 
         return insert_sql, params
