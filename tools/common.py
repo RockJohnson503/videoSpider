@@ -24,8 +24,8 @@ def episode_format(episode):
     except:
         return int(re.sub("\D", "", episode))
 
-# 将报错的综艺添加到数据库
-def error_video(list_type, url, name):
+# 连接mysql数据库
+def conn_sql(sql, params):
     dbparms = dict(
         host=settings.MYSQL_HOST,
         db=settings.MYSQL_DBNAME,
@@ -36,32 +36,23 @@ def error_video(list_type, url, name):
     )
     conn = pymysql.connect(**dbparms)
     cursor = conn.cursor()
+    cursor.execute(sql, params)
+    conn.commit()
+    cursor.close()
+    conn.close()
 
+# 将报错的综艺添加到数据库
+def error_video(list_type, url, name):
     insert_sql = """
         insert into errvideos(list_type, video_url, video_name)
         values(%s, %s, %s)
     """
-
-    cursor.execute(insert_sql, (list_type, url, name))
-    conn.commit()
+    conn_sql(insert_sql, (list_type, url, name))
 
 # 将报错的语法添加到数据库
 def error_grammer(grammer, video_name):
-    dbparms = dict(
-        host=settings.MYSQL_HOST,
-        db=settings.MYSQL_DBNAME,
-        user=settings.MYSQL_USER,
-        passwd=settings.MYSQL_PASSWORD,
-        charset='utf8',
-        use_unicode=True,
-    )
-    conn = pymysql.connect(**dbparms)
-    cursor = conn.cursor()
-
     insert_sql = """
         insert into errgrammer(grammer, video_name)
         values(%s, %s)
     """
-
-    cursor.execute(insert_sql, (grammer, video_name))
-    conn.commit()
+    conn_sql(insert_sql, (grammer, video_name))
