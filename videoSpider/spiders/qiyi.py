@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import os, scrapy
 from urllib import parse
-from tools.selenium_spider import *
 from scrapy.http import Request
 from videoSpider.items import *
+from tools.selenium_spider import *
+from tools.common import episode_format, error_video
 
 
 class QiyiSpider(scrapy.Spider):
@@ -63,14 +64,14 @@ class QiyiSpider(scrapy.Spider):
                     .strip()\
                     .strip("\n")\
                     .strip("\r")
-                play_urls[num] = url
+                play_urls[episode_format(num)] = url
             else:
                 break
 
         tab_pills = response.css("#widget-tab-3 .selEpisodeTab-wrap ul li").extract()
         if len(tab_pills) > 1:
             for i, k in get_last_tv(response.url, os.path.abspath("tools/phantomjs")):
-                play_urls[i] = k
+                play_urls[episode_format(i)] = k
 
         # 将解析后的数据添加如Item
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
@@ -90,8 +91,12 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
 
         video_item = item_loader.load_item()
-        if len(video_item) > 3:
+        if len(video_item) > 6:
             yield video_item
+        else:
+            error_video(response.meta.get("list_type", ""),
+                        response.url,
+                        response.meta.get("video_name", ""))
 
 
     def parse_detail_2(self, response):
@@ -123,12 +128,17 @@ class QiyiSpider(scrapy.Spider):
         for album_item in album_items:
             url = album_item.css(".site-piclist_pic > a::attr(href)").extract_first("")
             num = album_item.css(".mod-listTitle_right::text").extract_first("")
-            play_urls[num] = url
+            play_urls[episode_format(num)] = url
 
         tab_pills = response.css("#album_pic_paging[style='display:none;']")
         if len(tab_pills) == 0:
-            for i, k in get_last_variety(response.url, os.path.abspath("tools/phantomjs")):
-                play_urls[i] = k
+            try:
+                for i, k in get_last_variety(response.url, os.path.abspath("tools/phantomjs")):
+                    play_urls[episode_format(i)] = k
+            except:
+                error_video(response.meta.get("list_type", ""),
+                            response.url,
+                            response.meta.get("video_name", ""))
 
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
@@ -145,9 +155,7 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
 
         video_item = item_loader.load_item()
-        if len(video_item) > 3:
-            yield video_item
-
+        yield video_item
 
     def parse_detail_4(self, response):
         # 对动漫细节的解析
@@ -161,12 +169,12 @@ class QiyiSpider(scrapy.Spider):
                 .strip()\
                 .strip("\n")\
                 .strip("\r")
-            play_urls[num] = url
+            play_urls[episode_format(num)] = url
 
         tab_pills = response.css("#block-H .mod-album_tab_num a").extract()
         if len(tab_pills) > 1:
             for i, k in get_last_anime(response.url, os.path.abspath("tools/phantomjs")):
-                play_urls[i] = k
+                play_urls[episode_format(i)] = k
 
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
@@ -183,5 +191,9 @@ class QiyiSpider(scrapy.Spider):
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
 
         video_item = item_loader.load_item()
-        if len(video_item) > 3:
+        if len(video_item) > 6:
             yield video_item
+        else:
+            error_video(response.meta.get("list_type", ""),
+                        response.url,
+                        response.meta.get("video_name", ""))
