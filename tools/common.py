@@ -24,6 +24,12 @@ def episode_format(episode):
     except:
         return int(re.sub("\D", "", episode))
 
+# 判断动漫是否为电影版或剧场版
+def is_anime(url):
+    pat = re.compile(r'.*www.iqiyi.com/a_.*')
+    res = pat.match(url)
+    return res
+
 # 连接mysql数据库
 def conn_sql(sql, params):
     dbparms = dict(
@@ -50,9 +56,9 @@ def error_video(list_type, url, name):
     conn_sql(insert_sql, (list_type, url, name))
 
 # 将报错的语法添加到数据库
-def error_grammer(grammer, video_name):
+def error_grammer(grammer, sql, param, video_name):
     insert_sql = """
-        insert into errgrammer(grammer, video_name)
-        values(%s, %s)
+        insert into errgrammer(grammer, insert_sql, param, video_name)
+        values(%s, %s, %s, %s)
     """
-    conn_sql(insert_sql, (grammer, video_name))
+    conn_sql(insert_sql, (grammer, sql, param, video_name))
