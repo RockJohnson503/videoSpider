@@ -50,7 +50,12 @@ class VideospiderItem(scrapy.Item):
             video_actor, video_director, video_language,
             front_image_url, crawl_time, crawl_update_time) 
             values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            on DUPLICATE key update crawl_update_time = values(crawl_update_time)
+            on duplicate key update video_des = values(video_des),
+            video_name = values(video_name), spell_name = values(spell_name),
+            video_addr = values(video_addr), video_type = values(video_type),
+            video_time = values(video_time), video_actor = values(video_actor),
+            video_director = values(video_director), video_language = values(video_language),
+            crawl_update_time = values(crawl_update_time)
         """]
 
         params = [[
@@ -75,7 +80,8 @@ class VideospiderItem(scrapy.Item):
         for items in flag:
             insert_sql.append("""
                 insert into episodes(video_id, episode, video_url)
-                values(%s, %s, %s)
+                values(%s, %s, %s) on duplicate key update
+                video_url = values(video_url)
             """)
 
             params.append((
