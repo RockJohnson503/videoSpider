@@ -20,7 +20,9 @@ class VideospiderItem(scrapy.Item):
     # define the fields for your item here like:
     play_url = scrapy.Field()
     list_type = scrapy.Field()
-    video_des = scrapy.Field()
+    video_des = scrapy.Field(
+        input_processor = MapCompose(lambda x: x[3:] if "简介：" in x else x)
+    )
     video_name = scrapy.Field()
     spell_name = scrapy.Field(
         input_processor = MapCompose(lambda x: "".join(lazy_pinyin(x)))

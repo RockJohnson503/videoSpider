@@ -20,6 +20,10 @@ MYSQL_DBNAME = "video"
 MYSQL_USER = "root"
 MYSQL_PASSWORD = ""
 
+# Log config
+LOG_FILE = "spider.log"
+LOG_LEVEL = "INFO"
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'videoSpider (+http://www.yourdomain.com)'
 
@@ -51,9 +55,10 @@ DOWNLOAD_DELAY = 5
 
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-#SPIDER_MIDDLEWARES = {
-#    'videoSpider.middlewares.VideospiderSpiderMiddleware': 543,
-#}
+SPIDER_MIDDLEWARES = {
+   'videoSpider.middlewares.RandomProxyMiddleware': 543,
+   'videoSpider.middlewares.RandomUserAgentMiddleware': 542,
+}
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
@@ -71,6 +76,7 @@ DOWNLOAD_DELAY = 5
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
    'videoSpider.pipelines.VideospiderPipeline': 300,
+   # 'videoSpider.pipelines.TestPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

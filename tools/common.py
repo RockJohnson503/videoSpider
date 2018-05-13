@@ -31,21 +31,28 @@ def is_anime(url):
     return res
 
 # 连接mysql数据库
-def conn_sql(sql, params):
-    dbparms = dict(
-        host=settings.MYSQL_HOST,
-        db=settings.MYSQL_DBNAME,
-        user=settings.MYSQL_USER,
-        passwd=settings.MYSQL_PASSWORD,
-        charset='utf8',
-        use_unicode=True,
-    )
-    conn = pymysql.connect(**dbparms)
-    cursor = conn.cursor()
-    cursor.execute(sql, params)
-    conn.commit()
-    cursor.close()
-    conn.close()
+class conn_sql:
+
+    def __init__(self):
+        dbparms = dict(
+            host=settings.MYSQL_HOST,
+            db=settings.MYSQL_DBNAME,
+            user=settings.MYSQL_USER,
+            passwd=settings.MYSQL_PASSWORD,
+            charset='utf8',
+            use_unicode=True,
+        )
+        self.conn = pymysql.connect(**dbparms)
+        self.cursor = self.conn.cursor()
+
+    def excute(self, sql, params=None):
+        self.cursor.execute(sql, params)
+        self.conn.commit()
+        return self.cursor.fetchall()
+
+    def close(self):
+        self.cursor.close()
+        self.conn.close()
 
 # 将报错的综艺添加到数据库
 def error_video(list_type, url, name):
@@ -53,7 +60,9 @@ def error_video(list_type, url, name):
         insert into errvideos(list_type, video_url, video_name)
         values(%s, %s, %s)
     """
-    conn_sql(insert_sql, (list_type, url, name))
+    conn = conn_sql()
+    conn.excute(insert_sql, (list_type, url, name))
+    conn.close()
 
 # 将报错的语法添加到数据库
 def error_grammer(grammer, sql, param, video_name):
@@ -61,4 +70,6 @@ def error_grammer(grammer, sql, param, video_name):
         insert into errgrammer(grammer, insert_sql, param, video_name)
         values(%s, %s, %s, %s)
     """
-    conn_sql(insert_sql, (grammer, sql, param, video_name))
+    conn = conn_sql()
+    conn.excute(insert_sql, (grammer, sql, param, video_name))
+    conn.close()
