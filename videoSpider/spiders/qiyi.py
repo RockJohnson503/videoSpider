@@ -4,21 +4,24 @@ from urllib import parse
 from scrapy.http import Request
 from videoSpider.items import *
 from tools.selenium_spider import *
+from scrapy.spiders import CrawlSpider, Rule
+from scrapy.linkextractors import LinkExtractor
 from tools.common import episode_format, error_video, is_anime
 
 
-class QiyiSpider(scrapy.Spider):
+class QiyiSpider(CrawlSpider):
     name = 'qiyi'
     allowed_domains = ['iqiyi.com']
-    # url_nums = ["4", "1", "2", "6"]
-    # cur_num = 0
-    # start_urls = ['http://list.iqiyi.com/www/%s/----------------iqiyi--.html' % url_nums[cur_num]]
-    start_urls = ['http://list.iqiyi.com/www/4/----------------iqiyi--.html',
-                  'http://list.iqiyi.com/www/1/----------------iqiyi--.html',
-                  'http://list.iqiyi.com/www/2/----------------iqiyi--.html',
-                  'http://list.iqiyi.com/www/6/----------------iqiyi--.html']
-    crawling = 0
-    crawled = 0
+    start_urls = ['http://list.iqiyi.com']
+
+    # 爬取规则,只对电影 电视剧 综艺 动漫进行跟进
+    rules = (
+        Rule(LinkExtractor(allow=(r'.*list.iqiyi.com/www/4/.*',
+                                  r'.*list.iqiyi.com/www/1/.*',
+                                  r'.*list.iqiyi.com/www/2/.*',
+                                  r'.*list.iqiyi.com/www/6/.*'))
+             , callback='parse', follow=True),
+    )
 
     def parse(self, response):
         # 对视频列表的解析
@@ -38,32 +41,20 @@ class QiyiSpider(scrapy.Spider):
                 callback = self.parse_detail_3
             else:
                 callback = self.parse_detail_4
+
             yield Request(url=parse.urljoin(response.url, post_url),
                           meta={"front_image_url": image_url,
                                 "list_type": list_type,
                                 "video_name": video_name,
                                 "video_actor": video_actor,
                                 "video_origin": "爱奇艺"}, callback=callback)
-            self.crawling += 1
-
-        # 提取下一页的路径
-        next_url = response.css("div.mod-page .a1[data-key='down']::attr(href)").extract_first("")
-        if next_url:
-            yield Request(url=parse.urljoin(response.url, next_url), callback=self.parse)
-        # else:
-        #     if self.cur_num < len(self.url_nums):
-        #         self.cur_num += 1
-        #     else:
-        #         self.cur_num = 0
-        #     num = self.url_nums[self.cur_num]
-        #     yield Request(url="http://list.iqiyi.com/www/%s/----------------iqiyi--.html/" % num, callback=self.parse)
 
 
     def parse_detail_1(self, response):
         # 对电视剧细节的解析
         # 处理电视剧的分页问题
         # 将解析后的数据添加如Item
-        print("正在爬取电视剧列表: %s" % self.crawled)
+        print("正在爬取: %s" % response.meta.get("video_name", ""))
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
         play_urls = {}
@@ -114,13 +105,12 @@ class QiyiSpider(scrapy.Spider):
                         response.url,
                         response.meta.get("video_name", ""))
         yield video_item
-        self.crawled += 1
-        print("应爬取: %s, 已爬取: %s" % (self.crawling, self.crawled))
+        print("爬取完毕: %s" % response.meta.get("video_name", ""))
 
 
     def parse_detail_2(self, response):
         # 对电影细节的解析
-        print("正在爬取电影列表: %s" % self.crawled)
+        print("正在爬取: %s" % response.meta.get("video_name", ""))
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
         item_loader.add_value("play_url", response.url)
@@ -138,14 +128,13 @@ class QiyiSpider(scrapy.Spider):
 
         video_item = item_loader.load_item()
         yield video_item
-        self.crawled += 1
-        print("应爬取: %s, 已爬取: %s" % (self.crawling, self.crawled))
+        print("爬取完毕: %s" % response.meta.get("video_name", ""))
 
 
     def parse_detail_3(self, response):
         # 对综艺细节的解析
         # 处理综艺的分页问题
-        print("正在爬取综艺列表: %s" % self.crawled)
+        print("正在爬取: %s" % response.meta.get("video_name", ""))
         play_urls = {}
         album_items = response.css("#albumpic-showall-wrap li")
         for album_item in album_items:
@@ -181,12 +170,12 @@ class QiyiSpider(scrapy.Spider):
         video_item = item_loader.load_item()
         yield video_item
         self.crawled += 1
-        print("应爬取: %s, 已爬取: %s" % (self.crawling, self.crawled))
+        print("爬取完毕: %s" % response.meta.get("video_name", ""))
 
     def parse_detail_4(self, response):
         # 对动漫细节的解析
         # 处理动漫的分页问题
-        print("正在爬取动漫列表: %s" % self.crawled)
+        print("正在爬取: %s" % response.meta.get("video_name", ""))
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
         play_urls = {}
         if is_anime(response.url):
@@ -232,5 +221,4 @@ class QiyiSpider(scrapy.Spider):
                         response.url,
                         response.meta.get("video_name", ""))
         yield video_item
-        self.crawled += 1
-        print("应爬取: %s, 已爬取: %s" % (self.crawling, self.crawled))
+        print("爬取完毕: %s" % response.meta.get("video_name", ""))
