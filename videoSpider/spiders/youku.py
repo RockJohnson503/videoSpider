@@ -14,7 +14,7 @@ class YoukuSpider(CrawlSpider):
     allowed_domains = ['youku.com']
     start_urls = ['http://list.youku.com/category/show/c_97.html']
 
-    # 爬取规则,只对电影 电视剧 综艺 动漫进行跟进,
+    # 爬取规则,只对电影 电视剧 综艺 动漫进行跟进
     rules = (
         Rule(LinkExtractor(allow=(r'list.youku.com/category/show/c_97.*',
                                   r'list.youku.com/category/show/c_96.*',
@@ -48,13 +48,14 @@ class YoukuSpider(CrawlSpider):
         if list_type == "电影":
             play_url = response.url
         post_url = youku_get_href(response.url, os.path.abspath("tools/phantomjs"))
-        yield Request(url=parse.urljoin("http://list.youku.com/", post_url),
-                      meta={"front_image_url": response.meta.get("front_image_url", ""),
-                            "list_type": list_type,
-                            "play_url": play_url if play_url else "",
-                            "video_name": response.meta.get("video_name", ""),
-                            "video_origin": "优酷"},
-                      callback=self.parse_details)
+        if post_url:
+            yield Request(url=parse.urljoin("http://list.youku.com/", post_url),
+                          meta={"front_image_url": response.meta.get("front_image_url", ""),
+                                "list_type": list_type,
+                                "play_url": play_url if play_url else "",
+                                "video_name": response.meta.get("video_name", ""),
+                                "video_origin": "优酷"},
+                          callback=self.parse_details)
 
     def parse_details(self, response):
         # 对电视剧细节的解析
