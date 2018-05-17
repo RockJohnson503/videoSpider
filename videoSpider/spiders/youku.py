@@ -12,14 +12,14 @@ from tools.common import episode_format, error_video
 class YoukuSpider(CrawlSpider):
     name = 'youku'
     allowed_domains = ['youku.com']
-    start_urls = ['http://list.youku.com/category/show/c_97.html']
+    start_urls = ['http://list.youku.com/category/show/c_96.html']
 
     # 爬取规则,只对电影 电视剧 综艺 动漫进行跟进
     rules = (
-        Rule(LinkExtractor(allow=(r'list.youku.com/category/show/c_97.*',
-                                  r'list.youku.com/category/show/c_96.*',
-                                  r'list.youku.com/category/show/c_85.*',
-                                  r'list.youku.com/category/show/c_100.*'))
+        Rule(LinkExtractor(allow=(r'list.youku.com/category/show/c_96.*',
+                                  r'list.youku.com/category/show/c_100.*',
+                                  r'list.youku.com/category/show/c_97.*',
+                                  r'list.youku.com/category/show/c_85.*'))
              , callback='parse_item', follow=True),
     )
 
@@ -69,9 +69,9 @@ class YoukuSpider(CrawlSpider):
         elif list_type == "电影":
             play_urls = response.meta.get("play_url", "")
         elif list_type == "综艺":
-            iterable = get_youku_anime(response.url, os.path.abspath("tools/phantomjs"))
-        else:
             iterable = get_youku_variety(response.url, os.path.abspath("tools/phantomjs"))
+        else:
+            iterable = get_youku_anime(response.url, os.path.abspath("tools/phantomjs"))
         iterable = iterable if iterable else range(0)
         for i, k in iterable:
             play_urls[episode_format(i)] = k.replace(k[k.index(".html?s") + 5:], "")
