@@ -10,9 +10,9 @@ from tools.common import episode_format, error_video
 class YoukudirSpider(scrapy.Spider):
     name = 'youkuDir'
     allowed_domains = ['youku.com']
-    start_urls = ['http://list.youku.com/category/show/c_96.html',
-                  'http://list.youku.com/category/show/c_100.html',
+    start_urls = ['http://list.youku.com/category/show/c_100.html',
                   'http://list.youku.com/category/show/c_97.html',
+                  'http://list.youku.com/category/show/c_96.html',
                   'http://list.youku.com/category/show/c_85.html']
 
     def parse(self, response):

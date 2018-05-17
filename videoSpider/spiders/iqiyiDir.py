@@ -11,8 +11,8 @@ class IqiyidirSpider(scrapy.Spider):
     name = 'iqiyiDir'
     allowed_domains = ['iqiyi.com']
     start_urls = ['http://list.iqiyi.com/www/4/----------------iqiyi--.html',
-                  'http://list.iqiyi.com/www/1/----------------iqiyi--.html',
                   'http://list.iqiyi.com/www/2/----------------iqiyi--.html',
+                  'http://list.iqiyi.com/www/1/----------------iqiyi--.html',
                   'http://list.iqiyi.com/www/6/----------------iqiyi--.html']
 
     def parse(self, response):
