@@ -83,7 +83,7 @@ class VideospiderItem(scrapy.Item):
             insert_sql.append("""
                 insert into episodes(video_id, episode, video_url)
                 values(%s, %s, %s) on duplicate key update
-                video_url = values(video_url)
+                video_id = values(video_id)
             """)
 
             params.append((
