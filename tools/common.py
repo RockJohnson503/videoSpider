@@ -24,19 +24,19 @@ def episode_format(episode):
     except:
         return int(re.sub("\D", "", episode))
 
-# 判断动漫是否为电影版或剧场版
-def is_anime(url):
-    pat = re.compile(r'.*www.iqiyi.com/a_.*')
+# 判断是否为播放页面
+def is_player(url):
+    pat = re.compile(r'.*www.iqiyi.com/v_.*')
     res = pat.match(url)
     return res
 
 # 连接mysql数据库
 class conn_sql:
 
-    def __init__(self):
+    def __init__(self, db=None):
         dbparms = dict(
             host=settings.MYSQL_HOST,
-            db=settings.MYSQL_DBNAME,
+            db=settings.MYSQL_DBNAME if db == None else db,
             user=settings.MYSQL_USER,
             passwd=settings.MYSQL_PASSWORD,
             charset='utf8',
@@ -58,18 +58,18 @@ class conn_sql:
 def error_video(list_type, url, name):
     insert_sql = """
         insert into errvideos(list_type, video_url, video_name)
-        values(%s, %s, %s)
+        values(%s, %s, %s) on duplicate key update list_type = values(list_type)
     """
-    conn = conn_sql()
+    conn = conn_sql("errors")
     conn.excute(insert_sql, (list_type, url, name))
     conn.close()
 
 # 将报错的语法添加到数据库
 def error_grammer(grammer, sql, param, video_name):
     insert_sql = """
-        insert into errgrammer(grammer, insert_sql, param, video_name)
+        insert into errgrammers(info, insert_sql, param, video_name)
         values(%s, %s, %s, %s)
     """
-    conn = conn_sql()
+    conn = conn_sql("errors")
     conn.excute(insert_sql, (grammer, sql, param, video_name))
     conn.close()
