@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import scrapy
+import os, scrapy, re
 from urllib import parse
 from scrapy.http import Request
 from videoSpider.items import *
@@ -16,10 +16,10 @@ class YoukuSpider(CrawlSpider):
 
     # 爬取规则,只对电影 电视剧 综艺 动漫进行跟进
     rules = (
-        Rule(LinkExtractor(allow=(r'list.youku.com/category/show/c_96.*',
-                                  r'list.youku.com/category/show/c_100.*',
-                                  r'list.youku.com/category/show/c_97.*',
-                                  r'list.youku.com/category/show/c_85.*'))
+        Rule(LinkExtractor(allow=(r'.*list.youku.com/category/show/c_96.*',
+                                  r'.*list.youku.com/category/show/c_100.*',
+                                  r'.*list.youku.com/category/show/c_97.*',
+                                  r'.*list.youku.com/category/show/c_85.*'))
              , callback='parse_item', follow=True),
     )
 
@@ -44,18 +44,20 @@ class YoukuSpider(CrawlSpider):
     def href_details(self, response):
         # 跳转到细节页面
         list_type = response.meta.get("list_type", "")
-        play_url = None
-        if list_type == "电影":
-            play_url = response.url
-        post_url = youku_get_href(response.url, os.path.abspath("tools/phantomjs"))
-        if post_url:
-            yield Request(url=parse.urljoin("http://list.youku.com/", post_url),
-                          meta={"front_image_url": response.meta.get("front_image_url", ""),
-                                "list_type": list_type,
-                                "play_url": play_url if play_url else "",
-                                "video_name": response.meta.get("video_name", ""),
-                                "video_origin": "优酷"},
-                          callback=self.parse_details)
+        play_url = response.url
+        body = response.text
+        if 'tvinfo' in body:
+            po = body.index("tvinfo")
+            body = body[po:]
+            res = re.match('.*tvinfo.*href=\\\\"(.*?)\\\\" target.*', body)
+            if res:
+                yield Request(url=parse.urljoin("http://list.youku.com/", res.group(1)),
+                              meta={"front_image_url": response.meta.get("front_image_url", ""),
+                                    "list_type": list_type,
+                                    "play_url": play_url,
+                                    "video_name": response.meta.get("video_name", ""),
+                                    "video_origin": "优酷"},
+                              callback=self.parse_details)
 
     def parse_details(self, response):
         # 对电视剧细节的解析
@@ -71,7 +73,11 @@ class YoukuSpider(CrawlSpider):
         elif list_type == "综艺":
             iterable = get_youku_variety(response.url, os.path.abspath("tools/phantomjs"))
         else:
-            iterable = get_youku_anime(response.url, os.path.abspath("tools/phantomjs"))
+            edi = response.css(".p-title .edition").extract_first("")
+            if edi != "剧场版":
+                iterable = get_youku_anime(response.url, os.path.abspath("tools/phantomjs"))
+            else:
+                play_urls = response.meta.get("play_url", "")
         iterable = iterable if iterable else range(0)
         for i, k in iterable:
             play_urls[episode_format(i)] = k.replace(k[k.index(".html?s") + 5:], "")
@@ -111,5 +117,6 @@ class YoukuSpider(CrawlSpider):
             error_video(response.meta.get("list_type", ""),
                         response.url,
                         response.meta.get("video_name", ""))
-        yield video_item
+        else:
+            yield video_item
         print("爬取完毕: %s" % response.meta.get("video_name", ""))
