@@ -16,10 +16,10 @@ class IqiyiSpider(CrawlSpider):
 
     # 爬取规则,只对电影 电视剧 综艺 动漫进行跟进
     rules = (
-        Rule(LinkExtractor(allow=(r'/www/4/.*',
-                                  r'/www/1/.*',
-                                  r'/www/2/.*',
-                                  r'/www/6/.*'))
+        Rule(LinkExtractor(allow=(r'.*/www/4/.*',
+                                  r'.*/www/1/.*',
+                                  r'.*/www/2/.*',
+                                  r'.*/www/6/.*'))
              , callback='parse_item', follow=True),
     )
 
