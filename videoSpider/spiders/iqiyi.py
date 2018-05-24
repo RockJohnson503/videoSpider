@@ -37,6 +37,8 @@ class IqiyiSpider(CrawlSpider):
             if list_type == "电视剧":
                 callback = self.parse_detail_1
             elif list_type == "电影":
+                if 'so.iqiyi,com' in post_url or 'src=search' in post_url or not is_player(post_url):
+                    continue
                 callback = self.parse_detail_2
             elif list_type == "综艺":
                 callback = self.parse_detail_3
@@ -104,7 +106,8 @@ class IqiyiSpider(CrawlSpider):
             error_video(response.meta.get("list_type", ""),
                         response.url,
                         response.meta.get("video_name", ""))
-        yield video_item
+        else:
+            yield video_item
         print("爬取完毕: %s" % response.meta.get("video_name", ""))
 
 
@@ -147,28 +150,29 @@ class IqiyiSpider(CrawlSpider):
             try:
                 for i, k in get_last_variety(response.url, os.path.abspath("tools/phantomjs")):
                     play_urls[episode_format(i)] = k
+
+                    item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
+
+                    item_loader.add_value("play_url", play_urls)
+                    item_loader.add_value("list_type", response.meta.get("list_type", ""))
+                    item_loader.add_css("video_des",
+                                        ".episodeIntro-brief[data-moreorless='lessinfo'] .briefIntroTxt::text")
+                    item_loader.add_value("video_name", response.meta.get("video_name", ""))
+                    item_loader.add_value("spell_name", response.meta.get("video_name", ""))
+                    item_loader.add_css("video_addr", ".episodeIntro-area a::text")
+                    item_loader.add_css("video_type", ".episodeIntro-type a::text")
+                    item_loader.add_value("video_origin", response.meta.get("video_origin", ""))
+                    item_loader.add_css("video_time", ".episodeIntro-lang[itemprop='datePublished'] a::text")
+                    item_loader.add_css("video_language", ".episodeIntro-lang[itemprop='inLanguage'] a::text")
+                    item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
+
+                    video_item = item_loader.load_item()
+                    yield video_item
             except:
                 error_video(response.meta.get("list_type", ""),
                             response.url,
                             response.meta.get("video_name", ""))
-                play_urls = response.url
 
-        item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
-
-        item_loader.add_value("play_url", play_urls)
-        item_loader.add_value("list_type", response.meta.get("list_type", ""))
-        item_loader.add_css("video_des", ".episodeIntro-brief[data-moreorless='lessinfo'] .briefIntroTxt::text")
-        item_loader.add_value("video_name", response.meta.get("video_name", ""))
-        item_loader.add_value("spell_name", response.meta.get("video_name", ""))
-        item_loader.add_css("video_addr", ".episodeIntro-area a::text")
-        item_loader.add_css("video_type", ".episodeIntro-type a::text")
-        item_loader.add_value("video_origin", response.meta.get("video_origin", ""))
-        item_loader.add_css("video_time", ".episodeIntro-lang[itemprop='datePublished'] a::text")
-        item_loader.add_css("video_language", ".episodeIntro-lang[itemprop='inLanguage'] a::text")
-        item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
-
-        video_item = item_loader.load_item()
-        yield video_item
         print("爬取完毕: %s" % response.meta.get("video_name", ""))
 
     def parse_detail_4(self, response):
@@ -177,7 +181,7 @@ class IqiyiSpider(CrawlSpider):
         print("正在爬取: %s" % response.meta.get("video_name", ""))
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
         play_urls = {}
-        if is_anime(response.url):
+        if not is_player(response.url):
             album_items = response.css(".wrapper-piclist ul li")
             for album_item in album_items:
                 if not album_item.css(".site-piclist_pic > a i.icon-yugao-new"):
@@ -219,5 +223,6 @@ class IqiyiSpider(CrawlSpider):
             error_video(response.meta.get("list_type", ""),
                         response.url,
                         response.meta.get("video_name", ""))
-        yield video_item
+        else:
+            yield video_item
         print("爬取完毕: %s" % response.meta.get("video_name", ""))
