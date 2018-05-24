@@ -21,7 +21,6 @@ elif choose == "3":
 elif choose == "4":
     where = "youkuDir"
 else:
-    where = "alone_test"
     execute(["scrapy", "crawl", "alone_test"])
     quit()
 
