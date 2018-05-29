@@ -30,8 +30,7 @@ class YoukudirSpider(scrapy.Spider):
                 yield Request(url=parse.urljoin("http://v.youku.com/", post_url),
                               meta={"front_image_url": image_url,
                                     "list_type": list_type,
-                                    "video_name": video_name,
-                                    "video_origin": "优酷"}, callback=self.href_details)
+                                    "video_name": video_name}, callback=self.href_details)
 
         # 提取下一页
         next_url = response.css(".yk-pager .next a::attr(href)").extract_first("")
@@ -52,8 +51,7 @@ class YoukudirSpider(scrapy.Spider):
                               meta={"front_image_url": response.meta.get("front_image_url", ""),
                                     "list_type": list_type,
                                     "play_url": play_url,
-                                    "video_name": response.meta.get("video_name", ""),
-                                    "video_origin": "优酷"},
+                                    "video_name": response.meta.get("video_name", "")},
                               callback=self.parse_details)
 
     def parse_details(self, response):
@@ -104,7 +102,7 @@ class YoukudirSpider(scrapy.Spider):
         item_loader.add_value("video_type", v_type)
         item_loader.add_css("video_time", ".p-title span::text")
         item_loader.add_value("video_actor", v_actor)
-        item_loader.add_value("video_origin", response.meta.get("video_origin", ""))
+        item_loader.add_value("video_origin", "优酷")
         item_loader.add_value("video_director", v_director)
         item_loader.add_value("video_language", addr)
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
