@@ -27,7 +27,9 @@ class VideospiderItem(scrapy.Item):
     spell_name = scrapy.Field(
         input_processor = MapCompose(lambda x: "".join(lazy_pinyin(x)))
     )
-    video_addr = scrapy.Field()
+    video_addr = scrapy.Field(
+        input_processor=MapCompose(lambda x: x.strip().strip("\n").strip("\r").strip("\t"))
+    )
     video_type = scrapy.Field(
         output_processor = Join(" ")
     )
