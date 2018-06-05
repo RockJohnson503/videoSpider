@@ -7,6 +7,7 @@ from tools.selenium_spider import *
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from tools.common import episode_format, error_video
+from videoSpider.middlewares import SpiderStateMiddleware
 
 
 class YoukuSpider(CrawlSpider):
@@ -38,7 +39,9 @@ class YoukuSpider(CrawlSpider):
                 yield Request(url=parse.urljoin("http://v.youku.com/", post_url),
                               meta={"front_image_url": image_url,
                                     "list_type": list_type,
-                                    "video_name": video_name}, callback=self.href_details)
+                                    "video_name": video_name},
+                              callback=self.href_details,
+                              priority=9)
 
     def href_details(self, response):
         # 跳转到细节页面
@@ -47,23 +50,26 @@ class YoukuSpider(CrawlSpider):
         body = response.text
         if 'tvinfo' in body:
             po = body.index("tvinfo")
-            body = body[po:]
-            res = re.match('.*tvinfo.*href=\\\\"(.*?)\\\\" target.*', body)
+            body = body[po:po + 250]
+            res = re.match('tvinfo.*href="(.*?)".*title="%s".*' % response.meta.get("video_name", ""), body, re.S)
             if res:
                 yield Request(url=parse.urljoin("http://list.youku.com/", res.group(1)),
                               meta={"front_image_url": response.meta.get("front_image_url", ""),
                                     "list_type": list_type,
                                     "play_url": play_url,
                                     "video_name": response.meta.get("video_name", "")},
-                              callback=self.parse_details)
+                              callback=self.parse_details,
+                              priority=10)
+                SpiderStateMiddleware.crawling += 1
 
     def parse_details(self, response):
         # 对电视剧细节的解析
-        # 处理电视剧的分页问题
-        print("正在爬取: %s" % response.meta.get("video_name", ""))
+        v_name = response.meta.get("video_name", "")
+        print("正在爬取: %s" % v_name)
         play_urls = {}
         list_type = response.meta.get("list_type", "")
         iterable = None
+        # 处理分页问题
         if list_type == "电视剧":
             iterable = get_youku_tv(response.url, os.path.abspath("tools/phantomjs"))
         elif list_type == "电影":
@@ -99,8 +105,8 @@ class YoukuSpider(CrawlSpider):
         item_loader.add_value("play_url", play_urls)
         item_loader.add_value("list_type", response.meta.get("list_type", ""))
         item_loader.add_css("video_des", ".p-intro .text::text")
-        item_loader.add_value("video_name", response.meta.get("video_name", ""))
-        item_loader.add_value("spell_name", response.meta.get("video_name", ""))
+        item_loader.add_value("video_name", v_name)
+        item_loader.add_value("spell_name", v_name)
         item_loader.add_value("video_addr", addr)
         item_loader.add_value("video_type", v_type)
         item_loader.add_css("video_time", ".p-title span::text")
@@ -111,10 +117,17 @@ class YoukuSpider(CrawlSpider):
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
 
         video_item = item_loader.load_item()
-        if len(video_item) < 6 or play_urls == {}:
-            error_video(response.meta.get("list_type", ""),
-                        response.url,
-                        response.meta.get("video_name", ""))
+        reason = None
+        if play_urls == {}:
+            reason = "没有播放路径"
+        elif len(video_item) < 8:
+            reason = "抓取的字段不足"
         else:
             yield video_item
-        print("爬取完毕: %s" % response.meta.get("video_name", ""))
+        if reason:
+            error_video(response.meta.get("list_type", ""),
+                        response.url,
+                        reason,
+                        v_name)
+        print("爬取完毕: %s" % v_name)
+        SpiderStateMiddleware.crawled += 1
