@@ -4,9 +4,10 @@
 #
 # See documentation in:
 # https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-
+import datetime
 from scrapy import signals
 from tools.xici_ip import get_ip
+from tools.common import crawl_info
 from fake_useragent import UserAgent
 
 
@@ -131,3 +132,32 @@ class RandomUserAgentMiddleware(object):
             return getattr(self.ua, self.ua_type)
 
         request.headers.setdefault("User-Agent", get_ua())
+
+
+class SpiderStateMiddleware(object):
+    # 储存爬取信息
+    crawling = 0
+    crawled = 0
+
+    def __init__(self, crawler):
+        cs = crawler.signals
+        cs.connect(self.handle_spider_opened, signals.spider_opened)
+        cs.connect(self.handle_spider_closed, signals.spider_closed)
+        cs.connect(self.handle_spider_error, signals.spider_error)
+        self.crawlerr = 0
+
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        return cls(crawler)
+
+    def handle_spider_opened(self, spider):
+        self.start_time = datetime.datetime.now()
+
+    def handle_spider_closed(self, spider, reason):
+        end_time = datetime.datetime.now()
+        spend_time = (end_time - self.start_time).seconds / 60
+        if spider.name != "alone_test":
+            crawl_info(spider.name, self.start_time, end_time, spend_time, self.crawling, self.crawled, self.crawlerr)
+
+    def handle_spider_error(self, spider):
+        self.crawlerr += 1
