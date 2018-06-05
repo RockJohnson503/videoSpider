@@ -21,8 +21,8 @@ MYSQL_USER = "root"
 MYSQL_PASSWORD = ""
 
 # Log config
-LOG_FILE = "spider.log"
 LOG_LEVEL = "INFO"
+LOG_STDOUT = True
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'videoSpider (+http://www.yourdomain.com)'
@@ -31,7 +31,8 @@ LOG_LEVEL = "INFO"
 ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 80
+CONCURRENT_REQUESTS = 100
+DEPTH_PRIORITY = 1
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
@@ -60,6 +61,7 @@ REDIRECT_ENABLED = False
 SPIDER_MIDDLEWARES = {
    'videoSpider.middlewares.RandomProxyMiddleware': 543,
    'videoSpider.middlewares.RandomUserAgentMiddleware': 542,
+   'videoSpider.middlewares.SpiderStateMiddleware': 1,
 }
 
 # Enable or disable downloader middlewares
@@ -85,7 +87,7 @@ ITEM_PIPELINES = {
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
 AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-AUTOTHROTTLE_START_DELAY = 5
+AUTOTHROTTLE_START_DELAY = 0.5
 # The maximum download delay to be set in case of high latencies
 AUTOTHROTTLE_MAX_DELAY = 60
 # The average number of requests Scrapy should be sending in parallel to
