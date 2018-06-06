@@ -45,8 +45,6 @@ class YoukuSpider(CrawlSpider):
 
     def href_details(self, response):
         # 跳转到细节页面
-        list_type = response.meta.get("list_type", "")
-        play_url = response.url
         body = response.text
         if 'tvinfo' in body:
             po = body.index("tvinfo")
@@ -55,8 +53,8 @@ class YoukuSpider(CrawlSpider):
             if res:
                 yield Request(url=parse.urljoin("http://list.youku.com/", res.group(1)),
                               meta={"front_image_url": response.meta.get("front_image_url", ""),
-                                    "list_type": list_type,
-                                    "play_url": play_url,
+                                    "list_type": response.meta.get("list_type", ""),
+                                    "play_url": response.url,
                                     "video_name": response.meta.get("video_name", "")},
                               callback=self.parse_details,
                               priority=10)
@@ -77,7 +75,7 @@ class YoukuSpider(CrawlSpider):
         elif list_type == "综艺":
             iterable = get_youku_variety(response.url, os.path.abspath("tools/phantomjs"))
         else:
-            edi = response.css(".p-title .edition").extract_first("")
+            edi = response.css(".edition::text").extract_first("")
             if edi != "剧场版":
                 iterable = get_youku_anime(response.url, os.path.abspath("tools/phantomjs"))
             else:
@@ -103,7 +101,7 @@ class YoukuSpider(CrawlSpider):
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
         item_loader.add_value("play_url", play_urls)
-        item_loader.add_value("list_type", response.meta.get("list_type", ""))
+        item_loader.add_value("list_type", list_type)
         item_loader.add_css("video_des", ".p-intro .text::text")
         item_loader.add_value("video_name", v_name)
         item_loader.add_value("spell_name", v_name)
@@ -125,7 +123,7 @@ class YoukuSpider(CrawlSpider):
         else:
             yield video_item
         if reason:
-            error_video(response.meta.get("list_type", ""),
+            error_video(list_type,
                         response.url,
                         reason,
                         v_name)
