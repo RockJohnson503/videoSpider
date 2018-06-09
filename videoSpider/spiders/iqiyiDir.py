@@ -27,7 +27,7 @@ class IqiyidirSpider(scrapy.Spider):
             post_url = post_node.css(".site-piclist_pic a::attr(href)").extract_first("")
             video_name = post_node.css(".site-piclist_info .site-piclist_info_title a::text").extract_first("")
             video_actor = post_node.css(".site-piclist_info .role_info em a::text").extract()
-            if 'so.iqiyi,com' in post_url or 'src=search' in post_url:
+            if 'so.iqiyi.com' in post_url or 'src=search' in post_url:
                 continue
             if list_type == "电视剧":
                 callback = self.parse_detail_1
@@ -198,7 +198,7 @@ class IqiyidirSpider(scrapy.Spider):
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
         play_urls = {}
         if not is_player(response.url):
-            album_items = response.css(".wrapper-piclist ul li")
+            album_items = response.css(".piclist-wrapper[data-tab-body='widget-tab-3'] ul.site-piclist li")
             for album_item in album_items:
                 if not album_item.css(".site-piclist_pic > a i.icon-yugao-new"):
                     url = album_item.css(".site-piclist_pic > a::attr(href)").extract_first("")
@@ -211,7 +211,7 @@ class IqiyidirSpider(scrapy.Spider):
                 else:
                     break
 
-            tab_pills = response.css("#block-H .mod-album_tab_num a").extract()
+            tab_pills = response.css(".subTab-sel .selEpisodeTab-wrap .albumTabPills li").extract()
             if len(tab_pills) > 1:
                 # 处理分页问题
                 for i, k in get_last_anime(response.url, os.path.abspath("tools/phantomjs")):
