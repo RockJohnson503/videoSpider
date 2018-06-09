@@ -9,12 +9,13 @@ from selenium import webdriver
 
 # 启动selenium的装饰器
 def start_sel(fun):
-    # options = webdriver.ChromeOptions()
+    options = webdriver.ChromeOptions()
     # options.add_argument('user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit'
     #                      '/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"')
-    # options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
+    options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
+    options.set_headless()
     def inner(*args):
-        browser = webdriver.PhantomJS(executable_path=args[1])
+        browser = webdriver.Chrome(executable_path=args[1], chrome_options=options)
         browser.get(args[0])
         return fun(args[0], args[1], browser)
     return inner
@@ -86,15 +87,23 @@ def get_last_variety(url, ex_path, browser=None):
 # 爱奇艺动漫的分页处理
 @start_sel
 def get_last_anime(url, ex_path, browser=None):
-    select_page = browser.find_element_by_css_selector(".subTab-sel .selEpisodeTab-wrap .albumTabPills li.selected")
+    try:
+        select_page = browser.find_element_by_css_selector(".subTab-sel .selEpisodeTab-wrap .albumTabPills li.selected")
+    except:
+        select_page = browser.find_element_by_css_selector(".subTab-sel .selEpisodeTab-wrap .albumAllset-li li.selected")
     i = 2 if select_page.get_attribute("data-avlist-page") == "1" else int(select_page.get_attribute("data-avlist-page")) - 1
     step = 1 if select_page.get_attribute("data-avlist-page") == "1" else -1
     while True:
         j = 1
         try:
-            buttons = browser.find_element_by_css_selector(".subTab-sel .selEpisodeTab-wrap .albumTabPills li:nth-child(%s)" % i)
+            buttons = browser.find_element_by_css_selector(".subTab-sel .selEpisodeTab-wrap .albumTabPills li[data-avlist-page='%s']" % i)
         except:
-            break
+            try:
+                browser.find_element_by_css_selector(".albumAllset-btn").click()
+                buttons = browser.find_element_by_css_selector(
+                    ".subTab-sel .selEpisodeTab-wrap .albumAllset-li li[data-avlist-page='%s']" % i)
+            except:
+                break
         buttons.click()
         time.sleep(1)
 

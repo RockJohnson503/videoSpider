@@ -90,7 +90,7 @@ class IqiyiSpider(CrawlSpider):
 
         if len(tab_pills) > 1:
             # 处理分页问题
-            for i, k in get_last_tv(response.url, os.path.abspath("tools/phantomjs")):
+            for i, k in get_last_tv(response.url, os.path.abspath("tools/chromedriver")):
                 play_urls[episode_format(i)] = k
 
         item_loader.add_value("play_url", play_urls)
@@ -163,7 +163,7 @@ class IqiyiSpider(CrawlSpider):
         tab_pills = response.css("#album_pic_paging[style='']")
         if len(tab_pills) > 0:
             # 处理分页问题
-            for i, k in get_last_variety(response.url, os.path.abspath("tools/phantomjs")):
+            for i, k in get_last_variety(response.url, os.path.abspath("tools/chromedriver")):
                 play_urls[episode_format(i)] = k
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
@@ -218,7 +218,7 @@ class IqiyiSpider(CrawlSpider):
             tab_pills = response.css(".subTab-sel .selEpisodeTab-wrap .albumTabPills li").extract()
             if len(tab_pills) > 1:
                 # 处理分页问题
-                for i, k in get_last_anime(response.url, os.path.abspath("tools/phantomjs")):
+                for i, k in get_last_anime(response.url, os.path.abspath("tools/chromedriver")):
                     play_urls[episode_format(i)] = k
 
             item_loader.add_css("video_des", "*[data-moreorless='lessinfo'][itemprop='description'] span:not(.c-999)::text")

@@ -69,15 +69,15 @@ class YoukuSpider(CrawlSpider):
         iterable = None
         # 处理分页问题
         if list_type == "电视剧":
-            iterable = get_youku_tv(response.url, os.path.abspath("tools/phantomjs"))
+            iterable = get_youku_tv(response.url, os.path.abspath("tools/chromedriver"))
         elif list_type == "电影":
             play_urls = response.meta.get("play_url", "")
         elif list_type == "综艺":
-            iterable = get_youku_variety(response.url, os.path.abspath("tools/phantomjs"))
+            iterable = get_youku_variety(response.url, os.path.abspath("tools/chromedriver"))
         else:
             edi = response.css(".edition::text").extract_first("")
             if edi != "剧场版":
-                iterable = get_youku_anime(response.url, os.path.abspath("tools/phantomjs"))
+                iterable = get_youku_anime(response.url, os.path.abspath("tools/chromedriver"))
             else:
                 play_urls = response.meta.get("play_url", "")
         iterable = iterable if iterable else range(0)
