@@ -45,7 +45,7 @@ DEPTH_PRIORITY = 1
 # Disable cookies (enabled by default)
 COOKIES_ENABLED = False
 RETRY_ENABLED = False
-REDIRECT_ENABLED = False
+# REDIRECT_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
