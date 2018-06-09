@@ -86,13 +86,13 @@ def get_last_variety(url, ex_path, browser=None):
 # 爱奇艺动漫的分页处理
 @start_sel
 def get_last_anime(url, ex_path, browser=None):
-    select_page = browser.find_element_by_css_selector("#block-H .mod-album_tab_num a.selected")
+    select_page = browser.find_element_by_css_selector(".subTab-sel .selEpisodeTab-wrap .albumTabPills li.selected")
     i = 2 if select_page.get_attribute("data-avlist-page") == "1" else int(select_page.get_attribute("data-avlist-page")) - 1
     step = 1 if select_page.get_attribute("data-avlist-page") == "1" else -1
     while True:
         j = 1
         try:
-            buttons = browser.find_element_by_css_selector("#block-H .mod-album_tab_num a:nth-child(%s)" % i)
+            buttons = browser.find_element_by_css_selector(".subTab-sel .selEpisodeTab-wrap .albumTabPills li:nth-child(%s)" % i)
         except:
             break
         buttons.click()
@@ -100,7 +100,7 @@ def get_last_anime(url, ex_path, browser=None):
 
         while True:
             try:
-                urls = browser.find_element_by_css_selector(".wrapper-piclist ul "
+                urls = browser.find_element_by_css_selector(".piclist-wrapper[data-tab-body='widget-tab-3'] ul.site-piclist "
                                                             "li:nth-child(%s) "
                                                             ".site-piclist_info "
                                                             ".site-piclist_info_title a" % j)
