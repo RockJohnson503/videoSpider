@@ -96,15 +96,15 @@ def get_last_anime(url, ex_path, browser=None):
     while True:
         j = 1
         try:
-            buttons = browser.find_element_by_css_selector(".subTab-sel .selEpisodeTab-wrap .albumTabPills li[data-avlist-page='%s']" % i)
+            browser.find_element_by_css_selector(".subTab-sel .selEpisodeTab-wrap .albumTabPills li[data-avlist-page='%s']" % i).click()
         except:
             try:
-                browser.find_element_by_css_selector(".albumAllset-btn").click()
-                buttons = browser.find_element_by_css_selector(
-                    ".subTab-sel .selEpisodeTab-wrap .albumAllset-li li[data-avlist-page='%s']" % i)
+                if not browser.find_element_by_css_selector(".albumAllset-tank").is_displayed():
+                    browser.find_element_by_css_selector(".albumAllset-btn").click()
+                browser.find_element_by_css_selector(
+                    ".subTab-sel .selEpisodeTab-wrap .albumAllset-li li[data-avlist-page='%s']" % i).click()
             except:
                 break
-        buttons.click()
         time.sleep(1)
 
         while True:
@@ -121,17 +121,6 @@ def get_last_anime(url, ex_path, browser=None):
         i += step
     browser.quit()
 
-# 获取优酷的视频细节页面
-@start_sel
-def youku_get_href(url, ex_path, browser=None):
-    href = None
-    try:
-        a = browser.find_element_by_css_selector(".tvinfo h2 > a")
-        href = a.get_attribute("href")
-    except:
-        print(url)
-    browser.quit()
-    return href
 
 # 优酷电视剧的分页处理
 @start_sel
