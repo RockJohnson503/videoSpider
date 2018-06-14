@@ -66,11 +66,11 @@ def error_video(list_type, url, reason, name):
 # 将报错的语法添加到数据库
 def error_grammer(grammer, sql, param, video_name):
     insert_sql = """
-        insert into errgrammers(info, insert_sql, param, video_name)
-        values(%s, %s, %s, %s)
+        insert into errgrammers(err_time, grammer, insert_sql, param, video_name)
+        values(%s, %s, %s, %s, %s)
     """
     conn = conn_sql("errors")
-    conn.excute(insert_sql, (grammer, sql, param, video_name))
+    conn.excute(insert_sql, (datetime.datetime.now(), grammer, sql, param, video_name))
     conn.close()
 
 # 记录爬取的信息
