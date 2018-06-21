@@ -43,8 +43,8 @@ class YoukudirSpider(scrapy.Spider):
     def href_details(self, response):
         # 跳转到细节页面
         body = response.text
-        if 'tvinfo' in body:
-            po = body.index("tvinfo")
+        po = body.find("tvinfo")
+        if po > 0:
             body = body[po:po + 250]
             res = re.match('tvinfo.*href="(.*?)".*title="%s".*' % response.meta.get("video_name", ""), body, re.S)
             if res:
@@ -58,12 +58,13 @@ class YoukudirSpider(scrapy.Spider):
                 SpiderStateMiddleware.crawling += 1
 
     def parse_details(self, response):
-        # 对电视剧细节的解析
+        # 对视频细节的解析
         v_name = response.meta.get("video_name", "")
         print("正在爬取: %s" % v_name)
         play_urls = {}
         list_type = response.meta.get("list_type", "")
         iterable = None
+
         # 处理分页问题
         if list_type == "电视剧":
             iterable = get_youku_tv(response.url, os.path.abspath("tools/chromedriver"))
@@ -79,7 +80,7 @@ class YoukudirSpider(scrapy.Spider):
                 play_urls = response.meta.get("play_url", "")
         iterable = iterable if iterable else range(0)
         for i, k in iterable:
-            play_urls[episode_format(i)] = k.replace(k[k.index(".html?s") + 5:], "")
+            play_urls[episode_format(i)] = k.replace(k[k.find(".html?s") + 5:], "")
 
         all_infos = response.css(".p-base > ul li")
         addr = v_type = v_actor = v_director = None
@@ -115,7 +116,7 @@ class YoukudirSpider(scrapy.Spider):
         reason = None
         if play_urls == {}:
             reason = "没有播放路径"
-        elif len(video_item) < 8:
+        elif len(video_item.values()) < 6:
             reason = "抓取的字段不足"
         else:
             yield video_item
