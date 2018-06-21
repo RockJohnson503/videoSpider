@@ -59,16 +59,16 @@ RETRY_ENABLED = False
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 SPIDER_MIDDLEWARES = {
-   'videoSpider.middlewares.RandomProxyMiddleware': 543,
-   'videoSpider.middlewares.RandomUserAgentMiddleware': 542,
    'videoSpider.middlewares.SpiderStateMiddleware': 1,
 }
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
-# DOWNLOADER_MIDDLEWARES = {
-#    'videoSpider.middlewares.VideospiderDownloaderMiddleware': 543,
-# }
+DOWNLOADER_MIDDLEWARES = {
+   # 'videoSpider.middlewares.VideospiderDownloaderMiddleware': 543,
+   # 'videoSpider.middlewares.RandomProxyMiddleware': 543,
+   'videoSpider.middlewares.RandomUserAgentMiddleware': 542,
+}
 
 # Enable or disable extensions
 # See https://doc.scrapy.org/en/latest/topics/extensions.html
@@ -80,7 +80,6 @@ SPIDER_MIDDLEWARES = {
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
    'videoSpider.pipelines.VideospiderPipeline': 300,
-   # 'videoSpider.pipelines.TestPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
