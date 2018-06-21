@@ -52,7 +52,7 @@ class get_ip:
 
     def get_random_ip(self):
         # 随机获取ip代理
-        res = self.conn.excute("select ip, port, proxy_type from ips order by rand() limit 1")
+        res = self.conn.excute("select ip, port, proxy_type from ips where proxy_type = 'HTTP' order by rand() limit 1")
         for ip, port, proxy_type in res:
             judge_re = self.judge_ip(ip, port, proxy_type)
             if judge_re:
@@ -61,7 +61,7 @@ class get_ip:
                 return self.get_random_ip()
 
     def judge_ip(self, ip, port, proxy_type):
-        http_url = "https://baidu.com"
+        http_url = "http://www.iqiyi.com"
         proxy_url = "%s://%s:%s" % (proxy_type, ip, port)
 
         try:
@@ -85,7 +85,3 @@ class get_ip:
     def delete_ip(self, ip):
         # 删除错误的ip
         self.conn.excute("delete from ips where ip = (%s)", ip)
-
-if __name__ == '__main__':
-    # crawl_ip()
-    pass
