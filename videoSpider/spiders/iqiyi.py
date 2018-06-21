@@ -111,7 +111,7 @@ class IqiyiSpider(CrawlSpider):
         reason = None
         if play_urls == {}:
             reason = "没有播放路径"
-        elif len(video_item) < 7:
+        elif len(video_item.values()) < 6:
             reason = "抓取的字段不足"
         else:
             yield video_item
@@ -183,7 +183,7 @@ class IqiyiSpider(CrawlSpider):
         reason = None
         if play_urls == {}:
             reason = "没有播放路径"
-        elif len(video_item) < 6:
+        elif len(video_item.values()) < 6:
             reason = "抓取的字段不足"
         else:
             yield video_item
@@ -243,7 +243,7 @@ class IqiyiSpider(CrawlSpider):
         reason = None
         if play_urls == {}:
             reason = "没有播放路径"
-        elif len(video_item) < 6:
+        elif len(video_item.values()) < 6:
             reason = "抓取的字段不足"
         else:
             yield video_item
