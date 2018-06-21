@@ -45,6 +45,8 @@ def episode_format(episode):
         episode = int(episode)
         return episode
     except:
+        if episode == "番外":
+            return -1
         return int(re.sub("\D", "", episode))
 
 # 判断是否为播放页面
