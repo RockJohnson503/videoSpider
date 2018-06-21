@@ -59,23 +59,3 @@ class VideospiderPipeline(object):
             self.sqls.append(insert_sql[i])
             self.params.append(params[i])
             cursor.execute(insert_sql[i], params[i])
-
-# 测试
-class TestPipeline(VideospiderPipeline):
-    def __init__(self, dbpool):
-        VideospiderPipeline.__init__(self, dbpool)
-
-    @classmethod
-    def from_settings(cls, settings):
-        # 获取setting里的数据库参数并调用连接池
-        dparms = dict(
-            host = settings["MYSQL_HOST"],
-            db = "test",
-            user = settings["MYSQL_USER"],
-            passwd = settings["MYSQL_PASSWORD"],
-            charset = "utf8",
-            cursorclass = pymysql.cursors.DictCursor,
-            use_unicode = True,
-        )
-        dbpool = adbapi.ConnectionPool("pymysql", **dparms)
-        return cls(dbpool)
