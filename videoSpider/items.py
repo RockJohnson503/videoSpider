@@ -83,9 +83,9 @@ class VideospiderItem(scrapy.Item):
         flag = self["play_url"] if isinstance(self["play_url"], dict) else range(1, 2)
         for items in flag:
             insert_sql.append("""
-                insert into episodes(video_id, episode, video_url)
-                values(%s, %s, %s) on duplicate key update
-                v_id_pre = video_id, video_id = values(video_id)
+                insert into episodes(video_id, episode, video_url) values(%s, %s, %s)
+                on duplicate key update v_id_pre = if(video_id != values(video_id), 
+                video_id, null), video_id = values(video_id)
             """)
 
             params.append((
