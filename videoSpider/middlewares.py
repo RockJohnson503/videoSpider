@@ -111,8 +111,9 @@ class RandomProxyMiddleware(object):
 
     def process_request(self, request, spider):
         get = get_ip()
-        request.mate["proxy"] = get.get_random_ip()
+        request.meta["proxy"] = get.get_random_ip()
         get.close()
+        return None
 
 
 class RandomUserAgentMiddleware(object):
@@ -130,8 +131,7 @@ class RandomUserAgentMiddleware(object):
     def process_request(self, request, spider):
         def get_ua():
             return getattr(self.ua, self.ua_type)
-
-        request.headers.setdefault("User-Agent", get_ua())
+        request.headers["User-Agent"] = get_ua()
 
 
 class SpiderStateMiddleware(object):
