@@ -17,6 +17,7 @@ def start_sel(fun):
     def inner(*args):
         browser = webdriver.Chrome(executable_path=args[1], chrome_options=options)
         browser.get(args[0])
+        time.sleep(1)
         return fun(args[0], args[1], browser)
     return inner
 
