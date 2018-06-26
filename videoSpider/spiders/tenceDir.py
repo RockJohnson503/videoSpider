@@ -136,7 +136,7 @@ class TencedirSpider(scrapy.Spider):
                 if "预告" not in item.css(".mark_v img::attr(alt)").extract_first(""):
                     en = item.css("a span::text").extract_first("")
                     url = item.css("a::attr(href)").extract_first("")
-                    play_urls[episode_format(en)] = url.replace(url[url.find(".html?v") + 5:], "")
+                    play_urls[episode_format(en)] = url
         else:
             detail_url = "https://s.video.qq.com/get_playsource?id=%s&plat=2&type=4&data_type=%s&video_type=%s&range=%s&plname=qq&otype=json&num_mod_cnt=20"
 
@@ -172,8 +172,6 @@ class TencedirSpider(scrapy.Spider):
                 if flag:
                     en = plist["episode_number"]
                     url = plist["playUrl"]
-                    if url.find(".html?v") != -1:
-                        url = url.replace(url[url.find(".html?v") + 5:], "")
                     if type != "综艺":
                         if int(en) <= prev:
                             en = prev = prev + 1
