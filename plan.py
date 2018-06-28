@@ -4,7 +4,6 @@
 File: plan.py
 Author: Rock Johnson
 """
-from tools.inc_server import inc
 from threading import Timer
 import os, datetime
 
