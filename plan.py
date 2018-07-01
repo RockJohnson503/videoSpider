@@ -13,8 +13,11 @@ num = 0
 def plan_run(where):
     global i
 
+    cmd = "scrapy crawl %s -s LOG_FILE=logs/%s_%s.log"
+    if where == "tenceDir":
+        cmd += " -s AUTOTHROTTLE_START_DELAY=1"
     loctime = str(datetime.datetime.now().replace(microsecond=0)).replace(" ", "_")
-    os.system("scrapy crawl %s -s LOG_FILE=logs/%s_%s.log" % (where, where, loctime))
+    os.system(cmd % (where, where, loctime))
 
     if num == 0:
         t = Timer(10, plan_run, [where])
