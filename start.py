@@ -10,9 +10,9 @@ from scrapy.cmdline import execute
 choose = input("1. 爱奇艺全站爬取\n2. 优酷全站爬取\n3. 爱奇艺定向爬取 \n4. 优酷定向爬取\n5. 腾讯定向爬取\n6. 运行单独测试\n请选择(默认6): ")
 
 if choose == "1":
-    where = "iqiyi"
+    where = "iqiyi -s CONCURRENT_REQUESTS=200"
 elif choose == "2":
-    where = "youku"
+    where = "youku -s CONCURRENT_REQUESTS=200"
 elif choose == "3":
     where = "iqiyiDir"
 elif choose == "4":
