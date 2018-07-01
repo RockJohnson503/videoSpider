@@ -111,8 +111,9 @@ class RandomProxyMiddleware(object):
 
     def process_request(self, request, spider):
         get = get_ip()
-        request.meta["proxy"] = get.get_random_ip()
+        p_url = get.get_random_ip()
         get.close()
+        request.meta["proxy"] = p_url
         return None
 
 
