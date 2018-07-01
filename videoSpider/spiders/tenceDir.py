@@ -3,6 +3,8 @@ import scrapy, requests, json
 from urllib import parse
 from scrapy.http import Request
 from videoSpider.items import *
+from tools.xici_ip import get_ip
+from fake_useragent import UserAgent
 from tools.common import episode_format, error_video
 from videoSpider.middlewares import SpiderStateMiddleware
 
@@ -155,7 +157,15 @@ class TencedirSpider(scrapy.Spider):
                 v_type = 10
                 d_type = 3
 
-            res = requests.get(parse.urljoin(response.url, detail_url % (id, d_type, v_type, "1-9999")))
+            get = get_ip()
+            p_url = get.get_random_ip()
+            get.close()
+            proxy_dict = {
+                "http": p_url
+            }
+            headers = {"User-Agent": getattr(UserAgent(), "random")}
+            res = requests.get(parse.urljoin(response.url, detail_url % (id, d_type, v_type, "1-9999")),
+                               proxies=proxy_dict, headers=headers)
             text = res.text[res.text.find("=") + 1: -1]
             all_json = json.loads(text)
             try:
