@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-import os, scrapy, re
+import os, scrapy, re, json
 from urllib import parse
 from scrapy.http import Request
 from videoSpider.items import *
 from tools.selenium_spider import *
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
-from tools.common import episode_format, error_video
+from tools.common import episode_format, error_video, request_url
 from videoSpider.middlewares import SpiderStateMiddleware
 
 
@@ -67,10 +67,11 @@ class YoukuSpider(CrawlSpider):
         play_urls = {}
         list_type = response.meta.get("list_type", "")
         iterable = None
+        v_id = response.text[response.text.find("showid:") + 8: response.text.find(", videoId:") - 1]
 
         # 处理分页问题
         if list_type == "电视剧":
-            iterable = get_youku_tv(response.url, os.path.abspath("tools/chromedriver"))
+            play_urls = self.parse_episode(v_id, list_type)
         elif list_type == "电影":
             play_urls = response.meta.get("play_url", "")
         elif list_type == "综艺":
@@ -78,9 +79,10 @@ class YoukuSpider(CrawlSpider):
         else:
             edi = response.css(".edition::text").extract_first("")
             if edi != "剧场版":
-                iterable = get_youku_anime(response.url, os.path.abspath("tools/chromedriver"))
+                play_urls = self.parse_episode(v_id, list_type)
             else:
                 play_urls = response.meta.get("play_url", "")
+
         iterable = iterable if iterable else range(0)
         for i, k in iterable:
             play_urls[episode_format(i)] = k.replace(k[k.find(".html?s") + 5:], "")
@@ -101,6 +103,7 @@ class YoukuSpider(CrawlSpider):
         # 将解析后的数据添加如Item
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
+        item_loader.add_value("v_id", v_id)
         item_loader.add_value("play_url", play_urls)
         item_loader.add_value("list_type", list_type)
         item_loader.add_css("video_des", ".p-intro .text::text")
@@ -121,6 +124,8 @@ class YoukuSpider(CrawlSpider):
             reason = "没有播放路径"
         elif len(video_item.values()) < 6:
             reason = "抓取的字段不足"
+        elif not video_item.get("v_id"):
+            reason = "抓取id失败"
         else:
             yield video_item
         if reason:
@@ -130,3 +135,34 @@ class YoukuSpider(CrawlSpider):
                         v_name)
         print("爬取完毕: %s" % v_name)
         SpiderStateMiddleware.crawled += 1
+
+    def parse_episode(self, v_id, l_type):
+        play_urls = {}
+        reload = 1
+        details_url = "https://list.youku.com/show/episode?id=%s&stage=reload_%s&callback=jQuery111209375254330663736"
+        while True:
+            res = request_url(details_url % (v_id, reload))
+            text = res.text[res.text.find("& jQuery111209375254330663736") + 30: -2]
+            all_json = json.loads(text)
+            mes = all_json["message"]
+            if mes != "success":
+                break
+            html = all_json["html"]
+            eps = html.split("<li>")[1:]
+            for ep in eps:
+                if l_type == "动漫":
+                    mat = re.match('.*p-item">(.*?)<a.*href="(.*?)\?s=.*<i class="(.*?)".*', ep)
+                else:
+                    mat = re.match('.*href="(.*?)\?s=.*_blank">(.*?)</a><i class="(.*?)".*', ep)
+                if mat:
+                    if "p-icon-preview" not in mat.group(3):
+                        if l_type == "动漫":
+                            play_urls[mat.group(1)] = parse.urljoin("https://v.youku.com", mat.group(2))
+                        else:
+                            play_urls[mat.group(2)] = parse.urljoin("https://v.youku.com", mat.group(1))
+            num = 40
+            if l_type == "动漫":
+                num = 10
+            reload += num
+
+        return play_urls

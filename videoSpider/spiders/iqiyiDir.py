@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, scrapy
+import os, scrapy, json
 from urllib import parse
 from tools.common import *
 from scrapy.http import Request
@@ -60,35 +60,16 @@ class IqiyidirSpider(scrapy.Spider):
         print("正在爬取: %s" % v_name)
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
-        play_urls = {}
+        v_id = response.css("*::attr(data-score-tvid)").extract_first("")
         album_items = response.css(".albumSubTab-wrap .piclist-wrapper ul li")
         des = "div.episodeIntro div.episodeIntro-brief[data-moreorless='lessinfo'] span::text"
         if len(album_items) == 0:
             # 针对架构不一样的电视剧
-            album_items = response.css(".wrapper-piclist ul li")
             des = "div[data-moreorless='lessinfo'] .bigPic-b-jtxt::text"
 
-        for album_item in album_items:
-            if not album_item.css(".site-piclist_pic > a i.icon-yugao-new"):
-                url = album_item.css(".site-piclist_pic > a::attr(href)").extract_first("")
-                num = album_item.css(".site-piclist_info .site-piclist_info_title a::text") \
-                    .extract_first("") \
-                    .strip() \
-                    .strip("\n") \
-                    .strip("\r")
-                play_urls[episode_format(num)] = url
-            else:
-                break
+        play_urls = self.parse_episode(v_id)
 
-        tab_pills = response.css("#widget-tab-3 .selEpisodeTab-wrap ul li").extract()
-        if len(tab_pills) == 0:
-            tab_pills = response.css("#block-H .mod_album_lists > div:nth-child(1) .mod-album_tab_num a").extract()
-
-        if len(tab_pills) > 1:
-            # 处理分页问题
-            for i, k in get_last_tv(response.url, os.path.abspath("tools/chromedriver")):
-                play_urls[episode_format(i)] = k
-
+        item_loader.add_value("v_id", v_id)
         item_loader.add_value("play_url", play_urls)
         item_loader.add_value("list_type", response.meta.get("list_type", ""))
         item_loader.add_css("video_des", des)
@@ -105,10 +86,12 @@ class IqiyidirSpider(scrapy.Spider):
 
         video_item = item_loader.load_item()
         reason = None
-        if play_urls == {}:
+        if len(play_urls) == 0:
             reason = "没有播放路径"
         elif len(video_item.values()) < 6:
             reason = "抓取的字段不足"
+        elif not video_item.get("v_id"):
+            reason = "抓取id失败"
         else:
             yield video_item
         if reason:
@@ -124,8 +107,11 @@ class IqiyidirSpider(scrapy.Spider):
         # 对电影细节的解析
         v_name = response.meta.get("video_name", "")
         print("正在爬取: %s" % v_name)
+        v_id = response.text[response.text.find("param['tvid']") + 17: response.text.find("param['vid']") - 8]
+        vid = response.text[response.text.find("param['vid']") + 16: response.text.find("param['albumId']") - 8]
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
+        item_loader.add_value("v_id", v_id)
         item_loader.add_value("play_url", response.url)
         item_loader.add_value("list_type", response.meta.get("list_type", ""))
         item_loader.add_css("video_des", ".partDes::attr(data-description)")
@@ -140,7 +126,16 @@ class IqiyidirSpider(scrapy.Spider):
         item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
 
         video_item = item_loader.load_item()
-        yield video_item
+        reason = None
+        if not video_item.get("v_id"):
+            reason = "抓取id失败"
+        else:
+            yield video_item
+        if reason:
+            error_video(response.meta.get("list_type", ""),
+                        response.url,
+                        reason,
+                        v_name)
         print("爬取完毕: %s" % v_name)
         SpiderStateMiddleware.crawled += 1
 
@@ -163,6 +158,7 @@ class IqiyidirSpider(scrapy.Spider):
                 play_urls[episode_format(i)] = k
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
+        item_loader.add_css("v_id", "*::attr(data-score-tvid)")
         item_loader.add_value("play_url", play_urls)
         item_loader.add_value("list_type", response.meta.get("list_type", ""))
         item_loader.add_css("video_des", ".episodeIntro-brief[data-moreorless='lessinfo'] .briefIntroTxt::text")
@@ -177,10 +173,12 @@ class IqiyidirSpider(scrapy.Spider):
 
         video_item = item_loader.load_item()
         reason = None
-        if play_urls == {}:
+        if len(play_urls) == 0:
             reason = "没有播放路径"
         elif len(video_item.values()) < 6:
             reason = "抓取的字段不足"
+        elif not video_item.get("v_id"):
+            reason = "抓取id失败"
         else:
             yield video_item
         if reason:
@@ -196,26 +194,12 @@ class IqiyidirSpider(scrapy.Spider):
         v_name = response.meta.get("video_name", "")
         print("正在爬取: %s" % response.meta.get("video_name", ""))
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
-        play_urls = {}
-        if not is_player(response.url):
-            album_items = response.css(".piclist-wrapper[data-tab-body='widget-tab-3'] ul.site-piclist li")
-            for album_item in album_items:
-                if not album_item.css(".site-piclist_pic > a i.icon-yugao-new"):
-                    url = album_item.css(".site-piclist_pic > a::attr(href)").extract_first("")
-                    num = album_item.css(".site-piclist_info .site-piclist_info_title a::text") \
-                        .extract_first("") \
-                        .strip() \
-                        .strip("\n") \
-                        .strip("\r")
-                    play_urls[episode_format(num)] = url
-                else:
-                    break
+        v_id = response.css("*::attr(data-score-tvid)").extract_first("")
+        if not v_id:
+            v_id = response.text[response.text.find("param['tvid']") + 17: response.text.find("param['vid']") - 8]
 
-            tab_pills = response.css(".subTab-sel .selEpisodeTab-wrap .albumTabPills li").extract()
-            if len(tab_pills) > 1:
-                # 处理分页问题
-                for i, k in get_last_anime(response.url, os.path.abspath("tools/chromedriver")):
-                    play_urls[episode_format(i)] = k
+        if not is_player(response.url):
+            play_urls = self.parse_episode(v_id)
 
             item_loader.add_css("video_des",
                                 "*[data-moreorless='lessinfo'][itemprop='description'] span:not(.c-999)::text")
@@ -229,6 +213,7 @@ class IqiyidirSpider(scrapy.Spider):
             item_loader.add_css("video_addr", "#thirdPartyTagList::text")
             item_loader.add_css("video_language", "#thirdPartyTagList::text")
 
+        item_loader.add_value("v_id", v_id)
         item_loader.add_value("play_url", play_urls)
         item_loader.add_value("list_type", response.meta.get("list_type", ""))
         item_loader.add_value("video_name", v_name)
@@ -238,10 +223,12 @@ class IqiyidirSpider(scrapy.Spider):
 
         video_item = item_loader.load_item()
         reason = None
-        if play_urls == {}:
+        if len(play_urls) == 0:
             reason = "没有播放路径"
         elif len(video_item.values()) < 6:
             reason = "抓取的字段不足"
+        elif not video_item.get("v_id"):
+            reason = "抓取id失败"
         else:
             yield video_item
         if reason:
@@ -251,3 +238,24 @@ class IqiyidirSpider(scrapy.Spider):
                         v_name)
         print("爬取完毕: %s" % v_name)
         SpiderStateMiddleware.crawled += 1
+
+    def parse_episode(self, v_id):
+        play_urls = {}
+        reload = 1
+        details_url = "http://cache.video.iqiyi.com/jp/avlist/%s/%s/?albumId=%s"
+        while True:
+            res = request_url(details_url % (v_id, reload, v_id), proxies=False)
+            text = res.text[res.text.find("=") + 1: -1]
+            all_json = json.loads(text)
+            vlst = all_json["data"]["vlist"]
+            if len(vlst) == 0:
+                break
+            for lst in vlst:
+                ep = lst["pd"]
+                url = lst["vurl"]
+                if "预" not in lst["pds"]:
+                    play_urls[ep] = url
+
+            reload += 1
+
+        return play_urls

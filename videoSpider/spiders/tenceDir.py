@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-import scrapy, requests, json
+import scrapy, json
 from urllib import parse
 from scrapy.http import Request
 from videoSpider.items import *
-from tools.xici_ip import get_ip
-from fake_useragent import UserAgent
-from tools.common import episode_format, error_video
+from tools.common import episode_format, error_video, request_url
 from videoSpider.middlewares import SpiderStateMiddleware
 
 
@@ -81,6 +79,9 @@ class TencedirSpider(scrapy.Spider):
         v_type = response.meta.get("v_type", "")
         v_type = response.css(".video_tag .tag_list a::text").extract() if v_type == "" else v_type
         v_time = response.meta.get("v_time", "")
+        # 获取id
+        rurl = response.url
+        v_id = rurl[rurl.rfind("/") + 1:rurl.find(".html")]
 
         # 解析视频语言字段
         lang = None
@@ -95,11 +96,12 @@ class TencedirSpider(scrapy.Spider):
         if list_type == "电影":
             play_urls = response.meta.get("play_url", "")
         else:
-            play_urls = self.parse_episode(response)
+            play_urls = self.parse_episode(response, v_id)
 
         # 将解析后的数据添加如Item
         item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
 
+        item_loader.add_value("v_id", v_id)
         item_loader.add_value("play_url", play_urls)
         item_loader.add_value("list_type", list_type)
         item_loader.add_css("video_des", ".video_desc .desc_txt span::text")
@@ -120,6 +122,8 @@ class TencedirSpider(scrapy.Spider):
             reason = "没有播放路径"
         elif len(video_item.values()) < 6:
             reason = "抓取的字段不足"
+        elif not video_item.get("v_id"):
+            reason = "抓取id失败"
         else:
             yield video_item
         if reason:
@@ -130,64 +134,46 @@ class TencedirSpider(scrapy.Spider):
         print("爬取完毕: %s" % v_name)
         SpiderStateMiddleware.crawled += 1
 
-    def parse_episode(self, response):
+    def parse_episode(self, response, v_id):
         #　解析播放路径
         play_urls = {}
-        if not response.css(".mod_episode .item_all") and not response.css(".mod_episode_tabs"):
-            for item in response.css(".mod_episode .item"):
-                if "预告" not in item.css(".mark_v img::attr(alt)").extract_first(""):
-                    en = item.css("a span::text").extract_first("")
-                    url = item.css("a::attr(href)").extract_first("")
-                    play_urls[episode_format(en)] = url
+
+        detail_url = "https://s.video.qq.com/get_playsource?id=%s&plat=2&type=4&data_type=%s&video_type=%s&range=%s&plname=qq&otype=json&num_mod_cnt=20"
+
+        # 获取类型
+        type = response.css(".video_title_cn .type::text").extract_first("")
+        d_type = 2
+        if type == "电视剧":
+            v_type = 2
+        elif type == "动漫":
+            v_type = 3
         else:
-            detail_url = "https://s.video.qq.com/get_playsource?id=%s&plat=2&type=4&data_type=%s&video_type=%s&range=%s&plname=qq&otype=json&num_mod_cnt=20"
+            v_type = 10
+            d_type = 3
 
-            # 获取id
-            rurl = response.url
-            id = rurl[rurl.rfind("/") + 1:rurl.find(".html")]
+        res = request_url(detail_url % (v_id, d_type, v_type, "1-9999"))
+        text = res.text[res.text.find("=") + 1: -1]
+        all_json = json.loads(text)
+        try:
+            plists = all_json["PlaylistItem"]["videoPlayList"]
+        except:
+            return response.css(".btn_primary::attr(href)").extract_first("")
+        prev = 0
+        for plist in plists:
+            flag = True
+            if plist["markLabelList"] != []:
+                if "预告" in plist["markLabelList"][0]["primeText"]:
+                    flag = False
 
-            # 获取类型
-            type = response.css(".video_title_cn .type::text").extract_first("")
-            d_type = 2
-            if type == "电视剧":
-                v_type = 2
-            elif type == "动漫":
-                v_type = 3
-            else:
-                v_type = 10
-                d_type = 3
+            if flag:
+                en = plist["episode_number"]
+                url = plist["playUrl"]
+                if type != "综艺":
+                    if int(en) <= prev:
+                        en = prev = prev + 1
+                    else:
+                        prev = int(en)
 
-            get = get_ip()
-            p_url = get.get_random_ip()
-            get.close()
-            proxy_dict = {
-                "http": p_url
-            }
-            headers = {"User-Agent": getattr(UserAgent(), "random")}
-            res = requests.get(parse.urljoin(response.url, detail_url % (id, d_type, v_type, "1-9999")),
-                               proxies=proxy_dict, headers=headers)
-            text = res.text[res.text.find("=") + 1: -1]
-            all_json = json.loads(text)
-            try:
-                plists = all_json["PlaylistItem"]["videoPlayList"]
-            except:
-                return response.css(".btn_primary::attr(href)").extract_first("")
-            prev = 0
-            for plist in plists:
-                flag = True
-                if plist["markLabelList"] != []:
-                    if "预告" in plist["markLabelList"][0]["primeText"]:
-                        flag = False
-
-                if flag:
-                    en = plist["episode_number"]
-                    url = plist["playUrl"]
-                    if type != "综艺":
-                        if int(en) <= prev:
-                            en = prev = prev + 1
-                        else:
-                            prev = int(en)
-
-                    play_urls[episode_format(en)] = url
+                play_urls[episode_format(en)] = url
 
         return play_urls
