@@ -4,32 +4,10 @@
 File: common.py
 Author: Rock Johnson
 """
-import hashlib, re, pymysql, datetime
-from videoSpider import settings
-
-# 连接mysql数据库
-class conn_sql:
-
-    def __init__(self, db=None):
-        dbparms = dict(
-            host=settings.MYSQL_HOST,
-            db=settings.MYSQL_DBNAME if db == None else db,
-            user=settings.MYSQL_USER,
-            passwd=settings.MYSQL_PASSWORD,
-            charset='utf8',
-            use_unicode=True,
-        )
-        self.conn = pymysql.connect(**dbparms)
-        self.cursor = self.conn.cursor()
-
-    def excute(self, sql, params=None):
-        self.cursor.execute(sql, params)
-        self.conn.commit()
-        return self.cursor.fetchall()
-
-    def close(self):
-        self.cursor.close()
-        self.conn.close()
+import hashlib, re, datetime, requests
+from tools.xici_ip import get_ip
+from tools.con_sql import conn_sql
+from fake_useragent import UserAgent
 
 # 将路径加密为长度固定的字符
 def get_md5(url):
@@ -48,6 +26,19 @@ def episode_format(episode):
         if episode == "番外":
             return -1
         return int(re.sub("\D", "", episode))
+
+# 请求播放路径
+def request_url(url, proxies=True, header=True):
+    if proxies:
+        get = get_ip()
+        p_url = get.get_random_ip()
+        get.close()
+    proxy_dict = {
+        "http": p_url
+    } if proxies else None
+    headers = {"User-Agent": getattr(UserAgent(), "random")} if header else None
+    res = requests.get(url, proxies=proxy_dict, headers=headers)
+    return res
 
 # 判断是否为播放页面
 def is_player(url):
