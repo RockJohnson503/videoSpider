@@ -5,7 +5,7 @@ File: xici_ip.py
 Author: Rock Johnson
 """
 import requests, time
-from tools.common import conn_sql
+from tools.con_sql import conn_sql
 from scrapy.selector import Selector
 
 
@@ -61,7 +61,7 @@ class get_ip:
                 return self.get_random_ip()
 
     def judge_ip(self, ip, port, proxy_type):
-        http_url = "http://www.iqiyi.com"
+        http_url = "https://www.baidu.com"
         proxy_url = "%s://%s:%s" % (proxy_type, ip, port)
 
         try:
