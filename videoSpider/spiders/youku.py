@@ -17,10 +17,10 @@ class YoukuSpider(CrawlSpider):
 
     # 爬取规则,只对电影 电视剧 综艺 动漫进行跟进
     rules = (
-        Rule(LinkExtractor(allow=(r'.*list.youku.com/category/show/c_96.*',
-                                  r'.*list.youku.com/category/show/c_100.*',
-                                  r'.*list.youku.com/category/show/c_97.*',
-                                  r'.*list.youku.com/category/show/c_85.*'))
+        Rule(LinkExtractor(allow=(r'list.youku.com/category/show/c_96.*',
+                                  r'list.youku.com/category/show/c_100.*',
+                                  r'list.youku.com/category/show/c_97.*',
+                                  r'list.youku.com/category/show/c_85.*'))
              , callback='parse_item', follow=True),
     )
 
