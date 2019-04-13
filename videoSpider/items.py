@@ -48,7 +48,6 @@ class VideospiderItem(scrapy.Item):
 
     def get_insert_sql(self):
         # 执行插入数据库的sql语句
-        video_id = get_md5(self["front_image_url"])
         if "v_id" in self.keys():
             if self["video_origin"] == "优酷":
                 v_o = "yk"
@@ -60,12 +59,12 @@ class VideospiderItem(scrapy.Item):
         else:
             v_id = None
         insert_sql = ["""
-            insert into videos(video_id, v_id, video_origin, list_type, video_des, video_name,
+            insert into videos(v_id, video_origin, list_type, video_des, video_name,
             spell_name, video_addr, video_type, video_time,
             video_actor, video_director, video_language,
             front_image_url, crawl_time, crawl_update_time) 
-            values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            on duplicate key update v_id = values(v_id), video_des = values(video_des),
+            values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            on duplicate key update video_des = values(video_des),
             video_name = values(video_name), spell_name = values(spell_name),
             video_addr = values(video_addr), video_type = values(video_type),
             video_time = values(video_time), video_actor = values(video_actor),
@@ -74,7 +73,6 @@ class VideospiderItem(scrapy.Item):
         """]
 
         params = [[
-            video_id,
             v_id,
             self["video_origin"],
             self["list_type"],
@@ -101,7 +99,7 @@ class VideospiderItem(scrapy.Item):
             """)
 
             params.append((
-                video_id,
+                v_id,
                 items,
                 self["play_url"].get(items) if isinstance(self["play_url"], dict) else self["play_url"]
             ))
