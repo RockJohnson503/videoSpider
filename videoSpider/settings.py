@@ -18,11 +18,11 @@ NEWSPIDER_MODULE = 'videoSpider.spiders'
 MYSQL_HOST = "127.0.0.1"
 MYSQL_DBNAME = "video"
 MYSQL_USER = "root"
-MYSQL_PASSWORD = ""
+MYSQL_PASSWORD = "k836867547"
 
 # Log config
 LOG_LEVEL = "INFO"
-LOG_STDOUT = True
+LOG_STDOUT = False
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'videoSpider (+http://www.yourdomain.com)'
@@ -67,7 +67,7 @@ SPIDER_MIDDLEWARES = {
 DOWNLOADER_MIDDLEWARES = {
    # 'videoSpider.middlewares.VideospiderDownloaderMiddleware': 543,
    # 'videoSpider.middlewares.RandomProxyMiddleware': 543,
-   'videoSpider.middlewares.RandomUserAgentMiddleware': 542,
+   # 'videoSpider.middlewares.RandomUserAgentMiddleware': 542,
 }
 
 # Enable or disable extensions
@@ -79,7 +79,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'videoSpider.pipelines.VideospiderPipeline': 300,
+   # 'videoSpider.pipelines.VideospiderPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

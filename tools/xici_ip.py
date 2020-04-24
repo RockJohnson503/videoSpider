@@ -5,7 +5,7 @@ File: xici_ip.py
 Author: Rock Johnson
 """
 import requests, time
-from tools.con_sql import conn_sql
+from .con_sql import conn_sql
 from scrapy.selector import Selector
 
 

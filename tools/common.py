@@ -7,7 +7,6 @@ Author: Rock Johnson
 import hashlib, re, datetime, requests
 from tools.xici_ip import get_ip
 from tools.con_sql import conn_sql
-from fake_useragent import UserAgent
 
 # 将路径加密为长度固定的字符
 def get_md5(url):
@@ -36,8 +35,7 @@ def request_url(url, proxies=True, header=True):
     proxy_dict = {
         "http": p_url
     } if proxies else None
-    headers = {"User-Agent": getattr(UserAgent(), "random")} if header else None
-    res = requests.get(url, proxies=proxy_dict, headers=headers)
+    res = requests.get(url, proxies=proxy_dict)
     return res
 
 # 判断是否为播放页面

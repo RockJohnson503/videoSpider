@@ -17,68 +17,58 @@ class TencedirSpider(scrapy.Spider):
 
     def parse(self, response):
         # 对视频列表的解析
+        item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
+        item_loader.add_css('list_type', '.filter_list a.current::text')
+        list_type = item_loader.get_collected_values('list_type')[0]
         post_nodes = response.css("li.list_item")
-        list_type = response.css(".filter_list a.current::text").extract_first("")
-        for post_node in post_nodes:
-            image_url = parse.urljoin(response.url, post_node.css(".figure img::attr(r-lazyload)").extract_first(""))
-            post_url = post_node.css(".figure::attr(href)").extract_first("")
-            video_name = post_node.css(".figure_title a::text").extract_first("")
-            video_actor = None
-            if list_type == "电影" or list_type == "电视剧":
-                video_actor = post_node.css(".figure_desc a::text").extract()
 
-            v_state = post_node.css(".figure .mark_v img::attr(alt)").extract_first("")
+        for post_node in post_nodes:
+            item_loader.add_css('video_name', '.figure_title a::text')
+            if list_type == "电影" or list_type == "电视剧":
+                item_loader.add_css('video_actor', '.figure_desc a::text')
+
+            v_state = post_node.css(".figure .mark_v img::attr(alt)").get("")
+            image_url = parse.urljoin(response.url, post_node.css(".figure img::attr(r-lazyload)").get(""))
             if "预告" not in v_state and image_url != response.url:
-                yield Request(url=parse.urljoin(response.url, post_url),
-                              meta={"front_image_url": image_url,
-                                    "list_type": list_type,
-                                    "video_name": video_name,
-                                    "video_actor": video_actor},
-                              callback=self.parse_director,
-                              priority=9)
+                item_loader.add_value('front_image_url', image_url)
+                post_url = post_node.css(".figure::attr(href)").get("")
+
+                yield response.follow(post_url, meta={'item_loader': item_loader}, callback=self.parse_director, priority=9)
 
         # 提取下一页
-        next_url = response.css(".mod_pages .page_next::attr(href)").extract_first("")
-        if len(next_url) != "javascript:;":
-            yield Request(url=parse.urljoin(response.url, next_url), callback=self.parse)
+        next_url = response.css(".mod_pages .page_next::attr(href)").get("")
+        if next_url != "javascript:;":
+            yield response.follow(next_url, callback=self.parse)
 
     def parse_director(self, response):
         # 解析导演
-        v_type = director = v_time = None
-        if response.meta.get("list_type", "") == "综艺":
-            v_type = response.css(".video_tags a[href*='search']::text").extract()
+        item_loader = response.meta.get('item_loader')
+        item_loader.add_value('play_url', response.url)
+        if item_loader.get_collected_values('list_type')[0] == "综艺":
+            item_loader.add_css('video_type', '.video_tags a[href*="search"]::text')
         else:
-            director = response.css(".director a::text").extract_first("")
-            v_time = response.css(".video_tags a[href*='year']::text").extract_first("")
-            if v_time == "":
-                v_time = response.css(".video_tags span::text").extract_first("")
+            item_loader.add_css('video_director', '.director a::text')
+            item_loader.add_css('video_time', '.video_tags a[href*="year"]::text')
+            if item_loader.get_collected_values('video_time') == []:
+                item_loader.add_css('video_time', '.video_tags span::text')
 
-        detail_url = response.css(".player_title a::attr(href)").extract_first("")
-        addr = response.css(".video_tags a::text").extract_first("")
-
-        yield Request(url=parse.urljoin(response.url, detail_url),
-                      meta={"front_image_url": response.meta.get("front_image_url", ""),
-                            "list_type": response.meta.get("list_type", ""),
-                            "video_name": response.meta.get("video_name", ""),
-                            "video_actor": response.meta.get("video_actor", ""),
-                            "play_url": response.url,
-                            "addr": addr,
-                            "v_time": v_time,
-                            "v_type": v_type,
-                            "director": director},
-                      callback=self.parse_details,
-                      priority=10)
+        item_loader.add_css('video_addr', '.video_tags a::text')
+        detail_url = response.css(".player_title a::attr(href)").get("")
+        
+        yield response.follow(detail_url,
+                              meta={'item_loader': item_loader},
+                              callback=self.parse_details,
+                              priority=10)
         SpiderStateMiddleware.crawling += 1
 
     def parse_details(self, response):
         # 对视频细节的解析
-        v_name = response.meta.get("video_name", "")
+        item_loader = response.meta.get('item_loader')
+        v_name = item_loader.get_collected_values('video_name')[0]
         print("正在爬取: %s" % v_name)
-        play_urls = {}
-        list_type = response.meta.get("list_type", "")
-        v_type = response.meta.get("v_type", "")
-        v_type = response.css(".video_tag .tag_list a::text").extract() if v_type == "" else v_type
-        v_time = response.meta.get("v_time", "")
+        list_type = item_loader.get_collected_values('list_type')[0]
+        if item_loader.get_collected_values('video_type') == []:
+            item_loader.add_css('video_type', '.video_tag .tag_list a::text')
         # 获取id
         rurl = response.url
         v_id = rurl[rurl.rfind("/") + 1:rurl.find(".html")]
@@ -86,39 +76,26 @@ class TencedirSpider(scrapy.Spider):
         # 解析视频语言字段
         lang = None
         for type in  response.css(".type_item"):
-            if type.css(".type_tit::text").extract_first("") == "语　言:":
-                lang = type.css(".type_txt::text").extract_first("")
-            if list_type == "综艺" and type.css(".type_tit::text").extract_first("") == "首播时间:":
-                v_time = type.css(".type_txt::text").extract_first("")
+            if type.css(".type_tit::text").get("") == "语　言:":
+                lang = type.css(".type_txt::text").get("")
+            if list_type == "综艺" and type.css(".type_tit::text").get("") == "首播时间:":
+                v_time = type.css(".type_txt::text").get("")
                 v_time = v_time[:v_time.find("-")]
+                item_loader.add_value('video_time', v_time)
 
         # 处理分页问题
-        if list_type == "电影":
-            play_urls = response.meta.get("play_url", "")
-        else:
-            play_urls = self.parse_episode(response, v_id)
+        if list_type != "电影":
+            item_loader.add_value('play_url', self.parse_episode(response, v_id))
 
-        # 将解析后的数据添加如Item
-        item_loader = VideoItemLoader(item=VideospiderItem(), response=response)
-
-        item_loader.add_value("v_id", v_id)
-        item_loader.add_value("play_url", play_urls)
-        item_loader.add_value("list_type", list_type)
+        item_loader.add_value('v_id', v_id)
         item_loader.add_css("video_des", ".video_desc .desc_txt span::text")
-        item_loader.add_value("video_name", v_name)
         item_loader.add_value("spell_name", v_name)
-        item_loader.add_value("video_addr", response.meta.get("addr", ""))
-        item_loader.add_value("video_type", v_type)
-        item_loader.add_value("video_time", v_time)
-        item_loader.add_value("video_actor", response.meta.get("video_actor", ""))
         item_loader.add_value("video_origin", "腾讯")
-        item_loader.add_value("video_director", response.meta.get("director", ""))
         item_loader.add_value("video_language", lang)
-        item_loader.add_value("front_image_url", response.meta.get("front_image_url", ""))
 
         video_item = item_loader.load_item()
         reason = None
-        if play_urls == {}:
+        if not video_item.get('play_url'):
             reason = "没有播放路径"
         elif len(video_item.values()) < 6:
             reason = "抓取的字段不足"
@@ -141,7 +118,7 @@ class TencedirSpider(scrapy.Spider):
         detail_url = "https://s.video.qq.com/get_playsource?id=%s&plat=2&type=4&data_type=%s&video_type=%s&range=%s&plname=qq&otype=json&num_mod_cnt=20"
 
         # 获取类型
-        type = response.css(".video_title_cn .type::text").extract_first("")
+        type = response.css(".video_title_cn .type::text").get("")
         d_type = 2
         if type == "电视剧":
             v_type = 2
@@ -157,7 +134,7 @@ class TencedirSpider(scrapy.Spider):
         try:
             plists = all_json["PlaylistItem"]["videoPlayList"]
         except:
-            return response.css(".btn_primary::attr(href)").extract_first("")
+            return response.css(".btn_primary::attr(href)").get("")
         prev = 0
         for plist in plists:
             flag = True
